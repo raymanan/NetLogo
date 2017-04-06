@@ -71,7 +71,7 @@ class ApplicationController {
       override def handle(a: ActionEvent): Unit = {
         val fileChooser = new FileChooser()
         fileChooser.setTitle("Select a NetLogo model")
-        fileChooser.setInitialDirectory(new java.io.File(System.getProperty("user.home")))
+        fileChooser.setInitialDirectory(new java.io.File(System.getProperty("user.dir")))
         val selectedFile = Option(fileChooser.showOpenDialog(menuBar.getScene.getWindow))
         val executionContext = ExecutionContext.fromExecutor(executor, e => System.err.println("exception in background thread: " + e.getMessage))
         val openModelUI = new OpenModelUI(executionContext, menuBar.getScene.getWindow)

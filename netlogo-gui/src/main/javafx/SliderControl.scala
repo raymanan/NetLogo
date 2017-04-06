@@ -6,6 +6,7 @@ import java.lang.{ Boolean => JBoolean, Double => JDouble }
 import java.util.concurrent.atomic.AtomicReference
 
 import javafx.beans.value.ObservableValue
+import javafx.beans.property.DoubleProperty
 import javafx.event.{ Event, EventHandler }
 import javafx.fxml.{ FXML, FXMLLoader }
 import javafx.geometry.Orientation
@@ -15,12 +16,14 @@ import javafx.scene.input.TouchEvent
 
 import com.sun.javafx.scene.control.skin.SliderSkin
 
-import org.nlogo.internalapi.{ RunnableModel, UpdateInterfaceGlobal }
+import org.nlogo.internalapi.{ CompiledSlider => ApiCompiledSlider, Monitorable,
+  RunnableModel, UpdateInterfaceGlobal }
 
 import org.nlogo.core.{ Slider => CoreSlider }
 
 // TODO: This only allows for sliders with constant mins and maxes
-class SliderControl(model: CoreSlider, runnableModel: RunnableModel) extends GridPane {
+class SliderControl(compiledSlider: ApiCompiledSlider, runnableModel: RunnableModel)
+  extends GridPane {
 
   @FXML
   var slider: Slider = _
@@ -31,6 +34,8 @@ class SliderControl(model: CoreSlider, runnableModel: RunnableModel) extends Gri
   @FXML
   var valueLabel: Label = _
 
+  val model = compiledSlider.widget
+
   val currentValue = new AtomicReference[JDouble](Double.box(model.default))
 
   locally {
@@ -40,12 +45,9 @@ class SliderControl(model: CoreSlider, runnableModel: RunnableModel) extends Gri
     loader.load()
     setPrefSize(model.right - model.left, model.bottom - model.top)
     nameLabel.setText(model.display orElse model.variable getOrElse "")
-    slider.setMax(model.max.toDouble)
-    slider.setMin(model.min.toDouble)
-    slider.setValue(model.default)
     slider.setSnapToTicks(true)
-    slider.setMajorTickUnit(model.step.toDouble)
     slider.setMinorTickCount(0)
+    slider.setShowTickMarks(true)
     slider.valueProperty.addListener(new javafx.beans.value.ChangeListener[Number]() {
       def changed(o: ObservableValue[_ <: Number], oldValue: Number, newValue: Number): Unit = {
         if (! slider.valueChangingProperty.get()) {
@@ -57,6 +59,15 @@ class SliderControl(model: CoreSlider, runnableModel: RunnableModel) extends Gri
       }
     })
     bindSliderToLabel(slider, valueLabel)
+    bindPropertyToMonitorable(slider.minProperty,           compiledSlider.min)
+    bindPropertyToMonitorable(slider.maxProperty,           compiledSlider.max)
+    bindPropertyToMonitorable(slider.valueProperty,         compiledSlider.value)
+    bindPropertyToMonitorable(slider.majorTickUnitProperty, compiledSlider.inc)
+  }
+
+  protected def bindPropertyToMonitorable(d: DoubleProperty, m: Monitorable[Double]): Unit = {
+    d.setValue(m.defaultValue)
+    m.onUpdate({ updated => d.setValue(updated) })
   }
 
   protected def bindSliderToLabel(s: Slider, l: Label): Unit = {
