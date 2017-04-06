@@ -46,6 +46,7 @@ case class CompiledModel(
   val runnableModel: RunnableModel,
   val compilationResult: Either[CompilerException, Program])
 
+//TODO: This is a TERRIBLE name
 trait RunComponent {
   def tagAction(action: ModelAction, actionTag: String): Unit
   def updateReceived(update: ModelUpdate): Unit
