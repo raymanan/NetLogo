@@ -76,6 +76,68 @@ class SliderDataTests extends FunSuite {
     d.updateFromModel(-5)
     assertResult(-5)(d.value)
   }
+
+  class SliderStateMachine {
+    var currentValue = 0
+    var userIsChanging = false
+    var changingTags = Set.empty[String]
+
+    def valueSendStarted(t: String): Unit = {
+      changingTags += t
+    }
+    def valueSendFinished(t: String): Unit = {
+      changingTags -= t
+    }
+    def valueReceivedFromModel(i: Int): Unit = {
+      if (! userIsChanging) {
+        currentValue = i
+      }
+    }
+    def userStartedChanging(): Unit = {
+      userIsChanging = true
+    }
+    def userChangeFinished(i: Int): Unit = {
+      userIsChanging = false
+      currentValue = i
+    }
+  }
+
+  trait StateTest {
+    val s = new SliderStateMachine()
+  }
+
+  test("State machine reflects model value") { new StateTest {
+    s.valueReceivedFromModel(2)
+    assertResult(2)(s.currentValue)
+  } }
+
+  test("updates for user changes") { new StateTest {
+    s.userStartedChanging()
+    s.userChangeFinished(2)
+    assertResult(2)(s.currentValue)
+  } }
+
+  test("does not accept updates from the model while changing") { new StateTest {
+    s.userStartedChanging()
+    s.valueReceivedFromModel(2)
+    assertResult(0)(s.currentValue)
+  } }
+
+  test("accepts updates from the model once the user is done changing") { new StateTest {
+    s.userStartedChanging()
+    s.userChangeFinished(1)
+    s.valueReceivedFromModel(2)
+    assertResult(2)(s.currentValue)
+  } }
+
+  // don't know whether this is right or not
+  test("only updates after model updates are finished") { new StateTest {
+    s.valueSendStarted("abc")
+    s.valueReceivedFromModel(2)
+    assertResult(0)(s.currentValue)
+    s.valueSendFinished("abc")
+    assertResult(2)(s.currentValue)
+  } }
 }
 
 class SliderDataPropTests extends PropSpec with PropertyChecks {
@@ -166,4 +228,5 @@ class SliderDataPropTests extends PropSpec with PropertyChecks {
       assertResult(modelValue)(s.value)
     }
   }
+
 }
