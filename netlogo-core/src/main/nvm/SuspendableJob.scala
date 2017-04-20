@@ -58,6 +58,8 @@ class SuspendableJob(
 
   override def exclusive = true
 
+  def intact: Boolean = suspendedState.isEmpty
+
   // we are not suspendable. we run to the end and that's it
   override def step() { throw new UnsupportedOperationException() }
 
