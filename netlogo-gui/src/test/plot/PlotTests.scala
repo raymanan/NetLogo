@@ -136,4 +136,23 @@ class PlotTests extends SimplePlotTest {
     assertResult(null)(plot.getPen("pen3").orNull)
     assertResult(pen1)(plot.pens.head)
   }
+
+  testPlot("yAdjustment1") { plot =>
+    plot.defaultYMax = 1.23456E-10
+    plot.defaultYMin = -1.23456E-10
+    plot.clear()
+    assertResult(1.23456E-10)(plot.yMax)
+    assertResult(-1.23456E-10)(plot.yMin)
+  }
+
+  testPlot("yAdjustment2") { plot =>
+    plot.defaultYMax = 0
+    plot.defaultYMin = 0
+    plot.clear()
+    val pen1 = plot.createPlotPen("pen1", false)
+    plot.plot(pen1, 1.23456E-10)
+    plot.plot(pen1, -1.23456E-10)
+    assertResult(1.36E-10)(plot.yMax)
+    assertResult(-1.49E-10)(plot.yMin)
+  }
 }
