@@ -25,6 +25,14 @@ object Utils {
     }
   }
 
+  def changeListener[T](f: T => Unit): ChangeListener[T] = {
+    new ChangeListener[T]() {
+      def changed(o: ObservableValue[_ <: T], oldValue: T, newValue: T): Unit = {
+        f(newValue)
+      }
+    }
+  }
+
   implicit class RichDoubleMonitorable(m: Monitorable[Double]) {
     def valueProperty: DoubleProperty = {
       val p = new SimpleDoubleProperty(m.defaultValue)
