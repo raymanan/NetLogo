@@ -36,7 +36,7 @@ class DummyJobOwner(val random: MersenneTwisterFast, val tag: String) extends Jo
 
 object CompileAll {
   def apply(model: Model, workspace: AbstractWorkspace with SchedulerWorkspace): CompiledModel = {
-    val widgetActions = new WidgetActions(workspace.scheduledJobThread)
+    val widgetActions = new WidgetActions(workspace, workspace.scheduledJobThread)
     //TODO: We're forcing this to be a 2D Program
     val program = Program.fromDialect(NetLogoLegacyDialect).copy(interfaceGlobals = model.interfaceGlobals)
     try {

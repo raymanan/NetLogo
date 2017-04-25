@@ -127,6 +127,7 @@ case class CompiledButton(
       widgetActions.run(this, interval)
     }
     def stop(): Unit = {}
+    def errored(e: Exception): Unit = isRunning.errorCallback(e)
   }
 
 trait UpdateableMonitorable {
@@ -200,13 +201,14 @@ class JobRunningMonitorable extends Monitorable[Boolean] {
   var currentValue = defaultValue
 
   var updateCallback: (Boolean => Unit) = { (a: Boolean) => }
+  var errorCallback: (Exception => Unit) = { (e: Exception) => }
 
   def onUpdate(callback: Boolean => Unit): Unit = {
     updateCallback = callback
   }
 
   def onError(callback: Exception => Unit): Unit = {
-    // TODO: Fill this out
+    errorCallback = callback
   }
 
   def set(b: Boolean): Unit = {
