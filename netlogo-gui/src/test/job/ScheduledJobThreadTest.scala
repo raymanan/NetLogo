@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.{ Collections, ArrayList }
 
-import org.nlogo.internalapi.{ ModelAction, UpdateInterfaceGlobal, AddProcedureRun,
+import org.nlogo.internalapi.{ ModelAction, AddProcedureRun,
   JobDone, JobErrored, JobHalted, JobScheduler => ApiJobScheduler, ModelUpdate, MonitorsUpdate,
   StopProcedure, SuspendableJob }
 import org.nlogo.nvm.HaltException

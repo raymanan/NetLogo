@@ -16,8 +16,7 @@ import javafx.scene.input.TouchEvent
 
 import com.sun.javafx.scene.control.skin.SliderSkin
 
-import org.nlogo.internalapi.{ CompiledSlider => ApiCompiledSlider, Monitorable,
-  RunComponent, RunnableModel, UpdateInterfaceGlobal }
+import org.nlogo.internalapi.{ CompiledSlider => ApiCompiledSlider, Monitorable, RunComponent, RunnableModel }
 
 import org.nlogo.core.{ Slider => CoreSlider }
 import Utils.{ changeListener, handler }
@@ -64,7 +63,7 @@ class SliderControl(compiledSlider: ApiCompiledSlider, runnableModel: RunnableMo
         if (! slider.isValueChanging) {
         currentValue.set(Double.box(newValue.doubleValue))
         model.variable.foreach { variableName =>
-          runnableModel.submitAction(UpdateInterfaceGlobal(variableName.toUpperCase, currentValue))
+          // TODO: try to update value in model
         }
       }
     })

@@ -7,7 +7,7 @@ import org.nlogo.internalapi.{
   CompiledMonitor => ApiCompiledMonitor, CompiledSlider => ApiCompiledSlider,
   EmptyRunnableModel, AddProcedureRun, ModelAction, ModelUpdate, Monitorable, MonitorsUpdate,
   NonCompiledWidget, RunnableModel, RunComponent,
-  SchedulerWorkspace, StopProcedure, TicksCleared, TicksStarted, UpdateInterfaceGlobal }
+  SchedulerWorkspace, StopProcedure, TicksCleared, TicksStarted }
 
 import org.nlogo.core.{ AgentKind, Button => CoreButton, Chooser => CoreChooser,
   CompilerException, InputBox => CoreInputBox, Model, Monitor => CoreMonitor, NumericInput, Program,
@@ -64,12 +64,6 @@ class CompiledRunnableModel(workspace: AbstractWorkspace with SchedulerWorkspace
 
   private def scheduleAction(action: ModelAction, componentOpt: Option[RunComponent]): Unit = {
     action match {
-      case UpdateInterfaceGlobal(name, value) =>
-        val op = jobThread.createOperation( { () =>
-          workspace.world.setObserverVariableByName(name, value.get)
-        })
-        registerTag(componentOpt, action, op.tag)
-        jobThread.queueTask(op)
       case AddProcedureRun(widgetTag, isForever, interval) =>
         // TODO: this doesn't take isForever into account yet
         val p = findWidgetProcedure(widgetTag)

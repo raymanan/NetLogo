@@ -9,7 +9,7 @@ import org.nlogo.internalapi.{
 import org.nlogo.api.{ JobOwner, MersenneTwisterFast, NetLogoLegacyDialect }
 import org.nlogo.agent.World
 import org.nlogo.internalapi.{ AddProcedureRun, ModelAction, ModelUpdate, Monitorable,
-  MonitorsUpdate, RunComponent, SchedulerWorkspace, StopProcedure, UpdateInterfaceGlobal }
+  MonitorsUpdate, RunComponent, SchedulerWorkspace, StopProcedure }
 import org.nlogo.core.{ AgentKind, Button => CoreButton, Chooser => CoreChooser,
   CompilerException, InputBox => CoreInputBox, Model, Monitor => CoreMonitor, NumericInput, NumberParser, Program,
   Slider => CoreSlider, StringInput, Switch => CoreSwitch, Widget }
