@@ -6,10 +6,13 @@ import
   java.util.{ ArrayList => JArrayList }
 
 import
-  org.nlogo.{ core, internalapi, job, nvm },
+  org.nlogo.{ compile, core, internalapi, job, nvm },
     core.{ Button, Femto },
     internalapi.ModelUpdate,
     nvm.{ Command, DummyWorkspace, Procedure },
+    compile.{ api, NvmTests },
+      api.StatementsBuilder,
+      NvmTests.assembleProcedure,
     job.ScheduledJobThreadTest.SimpleScheduler
 
 import
@@ -21,15 +24,23 @@ import
 class WidgetActionsTest extends FunSuite {
   trait Helper {
     val ws = new DummyWorkspace()
-    val dummyProcedure = {
+    def procedure(b: StatementsBuilder): Procedure = {
       import org.nlogo.core.{ SourceLocation, Token, TokenType }
-      new Procedure(false, "ABC", Token("ABC", TokenType.Ident, "ABC")(SourceLocation(0, 5, "")), Seq(), null)
+      val p = new Procedure(false, "ABC", Token("ABC", TokenType.Ident, "ABC")(SourceLocation(0, 5, "")), Seq(), null)
+      p.topLevel = true
+      val stmts = new StatementsBuilder()
+      assembleProcedure(p, b)
+      p
     }
+    val dummyProcedure = procedure(new StatementsBuilder() { done })
+    val errorProcedure = procedure(new StatementsBuilder() {})
     val scheduler = new SimpleScheduler()
     val actions = new WidgetActions(ws, scheduler)
     var error: Exception = null
     val button = new CompiledButton(Button(Some(""), 0, 0, 0, 0), None, "abc", dummyProcedure, actions)
     button.isRunning.onError(err => error = err)
+    val errorButton = new CompiledButton(Button(Some(""), 0, 0, 0, 0), None, "abc", errorProcedure, actions)
+    errorButton.isRunning.onError(err => error = err)
     def runTasks() {
       while (! scheduler.queue.isEmpty) {
         scheduler.stepTask()
@@ -59,7 +70,7 @@ class WidgetActionsTest extends FunSuite {
   } }
 
   test("WidgetActions causes the button to have an error when the button procedure errors") { new Helper {
-    button.start()
+    errorButton.start()
     runTasks()
     assert(error != null, "error was not sent to onError callback")
   } }

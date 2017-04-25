@@ -78,9 +78,16 @@ trait StatementsBuilderBase {
   def build: Statements = new Statements(stmts, loc)
 
   def buildBlock: CommandBlock = new CommandBlock(build, loc)
+
+  def stop =
+    statementEtc("_stop", "etc._stop", Seq())
+
+  def done = statement(
+    Instantiator.newInstance[CoreCommand](Class.forName("org.nlogo.core.prim._done")),
+    Instantiator.newInstance[Command](Class.forName("org.nlogo.prim._done")))
 }
 
-class StatementsBuilder {
+class StatementsBuilder extends StatementsBuilderBase {
   type ThisBuilder = StatementsBuilder
   def thisBuilder = this
 }

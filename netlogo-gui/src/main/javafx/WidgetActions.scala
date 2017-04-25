@@ -4,7 +4,7 @@ package org.nlogo.javafx
 
 import
   org.nlogo.{ api, internalapi, nvm },
-    internalapi.{ CompiledWidget, JobErrored, JobScheduler, ModelUpdate },
+    internalapi.{ CompiledWidget, JobErrored, JobFinished, JobScheduler, ModelUpdate },
     nvm.{ SuspendableJob, Workspace }
 
 import
@@ -36,17 +36,27 @@ class WidgetActions(workspace: Workspace, scheduler: JobScheduler) {
   }
 
   def notifyUpdate(update: ModelUpdate): Unit = {
+    def stopButton(c: CompiledButton): Unit = {
+      c.taskTag = None
+      c.isRunning.set(false)
+    }
     update match {
       case JobErrored(tag, error) =>
         widgetsByJobTag.get(tag) match {
           case Some(c: CompiledButton) =>
-            c.taskTag = None
-            c.isRunning.set(false)
+            stopButton(c)
             c.errored(error)
           case _ =>
         }
-        widgetsByJobTag -= tag
-      case other => widgetsByJobTag -= other.tag
+      case JobFinished(tag) =>
+        widgetsByJobTag.get(tag) match {
+          case Some(c: CompiledButton) =>
+            stopButton(c)
+            c.isRunning.set(false)
+          case _ =>
+        }
+      case other =>
     }
+    widgetsByJobTag -= update.tag
   }
 }
