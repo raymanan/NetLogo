@@ -126,7 +126,9 @@ case class CompiledButton(
     def start(interval: Long = 0): Unit = {
       widgetActions.run(this, interval)
     }
-    def stop(): Unit = {}
+    def stop(): Unit = {
+      widgetActions.stop(this)
+    }
     def errored(e: Exception): Unit = isRunning.errorCallback(e)
   }
 

@@ -43,11 +43,17 @@ class WidgetActionsTest extends FunSuite {
     errorButton.isRunning.onError(err => error = err)
     def runTasks() {
       while (! scheduler.queue.isEmpty) {
-        scheduler.stepTask()
-        val updates = new JArrayList[ModelUpdate]()
-        scheduler.updates.drainTo(updates)
-        updates.asScala.foreach { update => actions.notifyUpdate(update) }
+        stepTasks()
       }
+    }
+    def runTasks(i: Int): Unit = {
+      for (j <- 0 until i) { stepTasks }
+    }
+    private def stepTasks(): Unit = {
+      scheduler.stepTask()
+      val updates = new JArrayList[ModelUpdate]()
+      scheduler.updates.drainTo(updates)
+      updates.asScala.foreach { update => actions.notifyUpdate(update) }
     }
   }
 
@@ -59,7 +65,7 @@ class WidgetActionsTest extends FunSuite {
 
   test("WidgetActions.run(button) raises an exception if the button is already running") { new Helper {
     button.start()
-    intercept[IllegalStateException](button.start())
+    intercept[IllegalStateException] { button.start() }
   } }
 
   test("WidgetActions causes button to stop when the button halts or is finished") { new Helper {
@@ -75,11 +81,15 @@ class WidgetActionsTest extends FunSuite {
     assert(error != null, "error was not sent to onError callback")
   } }
 
-  test("WidgetActions.stop(button) stops that button if it is running") {
-    pending
-  }
+  test("WidgetActions.stop(button) stops that button if it is running") { new Helper {
+    errorButton.start()
+    errorButton.stop()
+    runTasks(3)
+    assert(! button.isRunning.currentValue)
+    assert(error == null) // show that the error job was never run
+  } }
 
-  test("WidgetActions.stop(button) raises an exception if the button is not running") {
-    pending
-  }
+  test("WidgetActions.stop(button) raises an exception if the button is not running") { new Helper {
+    intercept[IllegalStateException] { button.stop() }
+  } }
 }

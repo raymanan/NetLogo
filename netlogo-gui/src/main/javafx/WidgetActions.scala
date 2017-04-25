@@ -35,6 +35,16 @@ class WidgetActions(workspace: Workspace, scheduler: JobScheduler) {
     }
   }
 
+  def stop(button: CompiledButton): Unit = {
+    if (button.taskTag.nonEmpty) {
+      for {
+        tag <- button.taskTag
+      } scheduler.stopJob(tag)
+    } else {
+      throw new IllegalStateException("This job is not running")
+    }
+  }
+
   def notifyUpdate(update: ModelUpdate): Unit = {
     def stopButton(c: CompiledButton): Unit = {
       c.taskTag = None
