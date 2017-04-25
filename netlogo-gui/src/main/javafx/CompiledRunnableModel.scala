@@ -119,6 +119,7 @@ case class CompiledButton(
   val procedureTag:  String,
   val procedure:     Procedure)
   extends ApiCompiledButton {
+    var taskTag: Option[String] = None
     val isRunning    = new JobRunningMonitorable
     val ticksEnabled = new TicksStartedMonitorable
     def start(interval: Long): String = {

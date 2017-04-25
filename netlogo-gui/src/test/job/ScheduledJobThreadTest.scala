@@ -18,6 +18,19 @@ import scala.util.Try
 
 import ScheduledJobThread._
 
+object ScheduledJobThreadTest {
+  class SimpleScheduler extends JobScheduler {
+    override def timeout = 10
+    val queue = new LinkedBlockingQueue[ScheduledTask]
+    val updates = new LinkedBlockingQueue[ModelUpdate]
+    def die(): Unit = {}
+    var setTime: Long = 0
+    override def currentTime = setTime
+  }
+}
+
+import ScheduledJobThreadTest._
+
 class ScheduledJobThreadTest extends FunSuite {
 
   def sortTasks(es: ScheduledTask*): Seq[ScheduledTask] = {
@@ -72,15 +85,6 @@ class ScheduledJobThreadTest extends FunSuite {
     assertSortedOrder(RunMonitors(Map.empty[String, SuspendableJob], 0), RunJob(dummyJob, "abc", 0, 1))
   }
 
-  class Subject extends JobScheduler {
-    override def timeout = 10
-    val queue = new LinkedBlockingQueue[ScheduledTask]
-    val updates = new LinkedBlockingQueue[ModelUpdate]
-    def die(): Unit = {}
-    var setTime: Long = 0
-    override def currentTime = setTime
-  }
-
   class DummyJob extends SuspendableJob {
     var result: AnyRef = null
     def returning(a: AnyRef): DummyJob = { result = a; this }
@@ -113,7 +117,7 @@ class ScheduledJobThreadTest extends FunSuite {
   }
 
   trait Helper extends Inside {
-    val subject = new Subject()
+    val subject = new SimpleScheduler()
     def firstTask = subject.queue.peek()
     val DummyOneRunJob = new DummyJob()
     val DummyKeepRunningJob = new DummyJob().keepRepeating()
