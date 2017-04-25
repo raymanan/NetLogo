@@ -113,9 +113,18 @@ class CompiledRunnableModel(workspace: AbstractWorkspace with SchedulerWorkspace
   }
 }
 
-case class CompiledButton(val widget: CoreButton, val compilerError: Option[CompilerException], val procedureTag: String, val procedure: Procedure)
+case class CompiledButton(
+  val widget:        CoreButton,
+  val compilerError: Option[CompilerException],
+  val procedureTag:  String,
+  val procedure:     Procedure)
   extends ApiCompiledButton {
+    val isRunning    = new JobRunningMonitorable
     val ticksEnabled = new TicksStartedMonitorable
+    def start(interval: Long): String = {
+      "abc"
+    }
+    def stop(): Unit = {}
   }
 
 trait UpdateableMonitorable {
@@ -139,6 +148,10 @@ case class CompiledMonitor(
       updateCallback = callback
     }
 
+    def onError(callback: Exception => Unit): Unit = {
+      // TODO: Fill this out
+    }
+
     def defaultValue = "0"
 
     var currentValue = defaultValue
@@ -156,6 +169,7 @@ case class CompiledMonitor(
 case class NonCompiledMonitorable[A](val defaultValue: A) extends Monitorable[A] {
   val currentValue: A = defaultValue
   def onUpdate(callback: A => Unit): Unit = {}
+  def onError(callback: Exception => Unit): Unit = {}
   def compilerError = None
   def procedureTag = ""
 }
@@ -168,6 +182,29 @@ class TicksStartedMonitorable extends Monitorable[Boolean] {
 
   def onUpdate(callback: Boolean => Unit): Unit = {
     updateCallback = callback
+  }
+
+  /* this monitorable cannot error */
+  def onError(callback: Exception => Unit): Unit = {}
+
+  def set(b: Boolean): Unit = {
+    currentValue = b
+    updateCallback(b)
+  }
+}
+
+class JobRunningMonitorable extends Monitorable[Boolean] {
+  def defaultValue = false
+  var currentValue = defaultValue
+
+  var updateCallback: (Boolean => Unit) = { (a: Boolean) => }
+
+  def onUpdate(callback: Boolean => Unit): Unit = {
+    updateCallback = callback
+  }
+
+  def onError(callback: Exception => Unit): Unit = {
+    // TODO: Fill this out
   }
 
   def set(b: Boolean): Unit = {
@@ -188,8 +225,13 @@ case class CompiledMonitorable[A](
   var currentValue: A = defaultValue
 
   var updateCallback: (A => Unit) = { (a: A) => }
+
   def onUpdate(callback: A => Unit): Unit = {
     updateCallback = callback
+  }
+
+  def onError(callback: Exception => Unit): Unit = {
+    // TODO: Fill this out
   }
 
   def update(value: AnyRef): Unit = {
@@ -207,4 +249,9 @@ case class CompiledSlider(
   val value:  Monitorable[Double],
   val min:    Monitorable[Double],
   val max:    Monitorable[Double],
-  val inc:    Monitorable[Double]) extends ApiCompiledSlider
+  val inc:    Monitorable[Double]) extends ApiCompiledSlider {
+
+  def update(expected: AnyRef, update: AnyRef): Unit = {
+    // TODO: Fill this out
+  }
+}
