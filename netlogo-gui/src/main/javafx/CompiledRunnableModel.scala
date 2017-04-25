@@ -18,7 +18,7 @@ import org.nlogo.workspace.AbstractWorkspace
 import scala.util.{ Failure, Success }
 
 class CompiledRunnableModel(workspace: AbstractWorkspace with SchedulerWorkspace, compiledWidgets: Seq[CompiledWidget]) extends RunnableModel  {
-  import workspace.scheduledJobThread
+  val jobThread = workspace.scheduledJobThread
 
   override def submitAction(action: ModelAction): Unit = {
     scheduleAction(action, None)
@@ -47,7 +47,7 @@ class CompiledRunnableModel(workspace: AbstractWorkspace with SchedulerWorkspace
       case um: UpdateableMonitorable =>
         val job =
           new SuspendableJob(workspace.world.observers, false, um.procedure, 0, null, workspace.world.mainRNG)
-        scheduledJobThread.registerMonitor(um.procedureTag, job)
+        jobThread.registerMonitor(um.procedureTag, job)
     }
   }
 
@@ -65,20 +65,23 @@ class CompiledRunnableModel(workspace: AbstractWorkspace with SchedulerWorkspace
   private def scheduleAction(action: ModelAction, componentOpt: Option[RunComponent]): Unit = {
     action match {
       case UpdateInterfaceGlobal(name, value) =>
-        val tag = scheduledJobThread.scheduleOperation( { () =>
+        val op = jobThread.createOperation( { () =>
           workspace.world.setObserverVariableByName(name, value.get)
         })
-        registerTag(componentOpt, action, tag)
+        registerTag(componentOpt, action, op.tag)
+        jobThread.queueTask(op)
       case AddProcedureRun(widgetTag, isForever, interval) =>
         // TODO: this doesn't take isForever into account yet
         val p = findWidgetProcedure(widgetTag)
         findWidgetProcedure(widgetTag).foreach { procedure =>
           val job =
             new SuspendableJob(workspace.world.observers, isForever, procedure, 0, null, workspace.world.mainRNG)
-          val tag = scheduledJobThread.scheduleJob(job, interval)
-          registerTag(componentOpt, action, tag)
+          val scheduledAction = jobThread.createJob(job, interval)
+          registerTag(componentOpt, action, scheduledAction.tag)
+          jobThread.queueTask(scheduledAction)
         }
-      case StopProcedure(jobTag) => scheduledJobThread.stopJob(jobTag)
+      case StopProcedure(jobTag) => jobThread.stopJob(jobTag)
+      case _ =>
     }
   }
 
