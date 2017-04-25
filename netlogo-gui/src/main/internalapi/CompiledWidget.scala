@@ -25,7 +25,7 @@ trait CompiledButton extends CompiledWidget {
    * @throws IllegalStateException if the job is already running
    */
   @throws(classOf[IllegalStateException])
-  def start(interval: Long = 0): String
+  def start(interval: Long = 0): Unit
 
   /** Causes the job thread to stop running the task for this button
    *

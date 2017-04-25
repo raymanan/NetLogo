@@ -36,6 +36,7 @@ class DummyJobOwner(val random: MersenneTwisterFast, val tag: String) extends Jo
 
 object CompileAll {
   def apply(model: Model, workspace: AbstractWorkspace with SchedulerWorkspace): CompiledModel = {
+    val widgetActions = new WidgetActions(workspace.scheduledJobThread)
     //TODO: We're forcing this to be a 2D Program
     val program = Program.fromDialect(NetLogoLegacyDialect).copy(interfaceGlobals = model.interfaceGlobals)
     try {
@@ -46,7 +47,7 @@ object CompileAll {
       workspace.setProcedures(results.proceduresMap)
       workspace.init()
       workspace.world.asInstanceOf[org.nlogo.agent.CompilationManagement].program(results.program)
-      val compiledWidgets = model.widgets.map(compileWidget(results, workspace))
+      val compiledWidgets = model.widgets.map(compileWidget(results, workspace, widgetActions))
 
       CompiledModel(model,
         compiledWidgets,
@@ -65,7 +66,7 @@ object CompileAll {
     }
   }
 
-  def compileWidget(results: CompilerResults, workspace: AbstractWorkspace)(widget: Widget): CompiledWidget = {
+  def compileWidget(results: CompilerResults, workspace: AbstractWorkspace, widgetActions: WidgetActions)(widget: Widget): CompiledWidget = {
     def compileCode(source: String, name: String): Try[Procedure] = {
       Try {
         val compilerResults =
@@ -94,10 +95,10 @@ object CompileAll {
 
           compileCode(source, displayName).fold(
             {
-              case e: CompilerException => CompiledButton(b, Some(e), "", null)
+              case e: CompilerException => CompiledButton(b, Some(e), "", null, widgetActions)
               case other => throw other
             },
-            proc => CompiledButton(b, None, tag, proc))
+            proc => CompiledButton(b, None, tag, proc, widgetActions))
         } getOrElse NonCompiledWidget(widget)
       case m: CoreMonitor =>
         m.source map { monitorSource =>

@@ -16,11 +16,11 @@ import
 // 2) Workspace already has enough cruft growing on it and anything which gets put into org.nlogo.workspace seems
 //    like it may eventually end up added to Workspace.
 class WidgetActions(scheduler: JobScheduler) {
-  def run(button: CompiledButton): Unit = {
+  def run(button: CompiledButton, interval: Long): Unit = {
     if (button.taskTag.isEmpty) {
       val job =
         new SuspendableJob(null, button.widget.forever, button.procedure, 0, null, null)
-      val task = scheduler.createJob(job)
+      val task = scheduler.createJob(job, interval)
       button.taskTag = Some(task.tag)
       button.isRunning.set(true)
       scheduler.queueTask(task)

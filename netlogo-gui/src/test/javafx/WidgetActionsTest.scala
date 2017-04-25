@@ -19,18 +19,18 @@ class WidgetActionsTest extends FunSuite {
     }
     val scheduler = new SimpleScheduler()
     val actions = new WidgetActions(scheduler)
-    val button = new CompiledButton(Button(Some(""), 0, 0, 0, 0), None, "abc", dummyProcedure)
+    val button = new CompiledButton(Button(Some(""), 0, 0, 0, 0), None, "abc", dummyProcedure, actions)
   }
 
   test("WidgetActions.run(button) starts that button running") { new Helper {
-    actions.run(button)
+    button.start(0)
     assert(button.isRunning.currentValue)
     assert(! scheduler.queue.isEmpty, "run did not schedule job to queue")
   } }
 
   test("WidgetActions.run(button) raises an exception if the button is already running") { new Helper {
-    actions.run(button)
-    intercept[IllegalStateException](actions.run(button))
+    button.start(0)
+    intercept[IllegalStateException](button.start(0))
   } }
 
   test("WidgetActions causes button to stop when the button halts or is finished") {

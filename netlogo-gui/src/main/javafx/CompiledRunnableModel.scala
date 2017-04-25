@@ -81,7 +81,7 @@ class CompiledRunnableModel(workspace: AbstractWorkspace with SchedulerWorkspace
 
   def findWidgetProcedure(tag: String): Option[Procedure] = {
     compiledWidgets.collect {
-      case c@CompiledButton(_, _, t, procedure) if t == tag && procedure != null => procedure
+      case c@CompiledButton(_, _, t, procedure, _) if t == tag && procedure != null => procedure
     }.headOption
   }
 
@@ -117,13 +117,14 @@ case class CompiledButton(
   val widget:        CoreButton,
   val compilerError: Option[CompilerException],
   val procedureTag:  String,
-  val procedure:     Procedure)
+  val procedure:     Procedure,
+  widgetActions:     WidgetActions)
   extends ApiCompiledButton {
     var taskTag: Option[String] = None
     val isRunning    = new JobRunningMonitorable
     val ticksEnabled = new TicksStartedMonitorable
-    def start(interval: Long): String = {
-      "abc"
+    def start(interval: Long = 0): Unit = {
+      widgetActions.run(this, interval)
     }
     def stop(): Unit = {}
   }
