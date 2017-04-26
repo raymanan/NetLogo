@@ -93,7 +93,7 @@ class ApplicationController {
         openedModel.map {
           compiledModel =>
             if (ApplicationController.this.compiledModel != null) {
-              compiledModel.runnableModel.modelUnloaded()
+              compiledModel.modelUnloaded()
             }
             ConfigureWorld(workspace, compiledModel)
             compiledModel
@@ -146,7 +146,7 @@ class ApplicationController {
         interfaceArea.ticks.setValue(world.ticks)
       case update if update != null =>
         Option(compiledModel).foreach { model =>
-          model.runnableModel.notifyUpdate(update)
+          model.interfaceControl.notifyUpdate(update)
         }
       case _ =>
     }

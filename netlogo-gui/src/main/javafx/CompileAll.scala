@@ -9,7 +9,7 @@ import org.nlogo.internalapi.{
 import org.nlogo.api.{ JobOwner, MersenneTwisterFast, NetLogoLegacyDialect }
 import org.nlogo.agent.World
 import org.nlogo.internalapi.{ AddProcedureRun, ModelAction, ModelUpdate, Monitorable,
-  MonitorsUpdate, RunComponent, SchedulerWorkspace, StopProcedure }
+  MonitorsUpdate, SchedulerWorkspace, StopProcedure }
 import org.nlogo.core.{ AgentKind, Button => CoreButton, Chooser => CoreChooser,
   CompilerException, InputBox => CoreInputBox, Model, Monitor => CoreMonitor, NumericInput, NumberParser, Program,
   Slider => CoreSlider, StringInput, Switch => CoreSwitch, Widget }
@@ -51,7 +51,7 @@ object CompileAll {
 
       CompiledModel(model,
         compiledWidgets,
-        new CompiledRunnableModel(workspace, compiledWidgets, widgetActions),
+        widgetActions,
         Right(results.program))
     } catch {
       case e: CompilerException =>
@@ -139,7 +139,7 @@ object CompileAll {
         val min = monitorable("min", 0.0,   s.min)
         val max = monitorable("max", 100.0, s.max)
         val inc = monitorable("inc", 1.0,   s.step)
-        CompiledSlider(s, value, min, max, inc)
+        CompiledSlider(s, value, min, max, inc, widgetActions)
       case _ => NonCompiledWidget(widget)
     }
   }

@@ -4,7 +4,8 @@ package org.nlogo.javafx
 
 import
   org.nlogo.{ api, internalapi, nvm },
-    internalapi.{ CompiledWidget, JobErrored, JobFinished, JobScheduler, ModelUpdate, MonitorsUpdate },
+    internalapi.{ CompiledWidget, InterfaceControl, JobErrored, JobFinished, JobScheduler,
+      ModelUpdate, MonitorsUpdate },
     nvm.{ SuspendableJob, Workspace }
 
 import
@@ -18,7 +19,7 @@ import
 //    and scheduling (which NetLogo operations cannot do).
 // 2) Workspace already has enough cruft growing on it and anything which gets put into org.nlogo.workspace seems
 //    like it may eventually end up added to Workspace.
-class WidgetActions(workspace: Workspace, scheduler: JobScheduler) {
+class WidgetActions(workspace: Workspace, scheduler: JobScheduler) extends InterfaceControl {
   var widgetsByJobTag = WeakHashMap.empty[String, CompiledWidget]
   val monitorsByTag = WeakHashMap.empty[String, ReporterMonitorable]
   var staticMonitorables = WeakHashMap.empty[String, Seq[StaticMonitorable]]

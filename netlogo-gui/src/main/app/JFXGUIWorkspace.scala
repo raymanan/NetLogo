@@ -11,8 +11,8 @@ import org.nlogo.api.{ControlSet, Exceptions, FileIO, JobOwner, ModelSettings}
 import org.nlogo.nvm.{ Context, Instruction, PresentationCompilerInterface, SuspendableJob }
 import org.nlogo.workspace.AbstractWorkspaceScala
 import org.nlogo.javafx.DummyJobOwner
-import org.nlogo.internalapi.{ JobScheduler, ModelAction, ModelUpdate, RunComponent,
-  SchedulerWorkspace, TicksCleared, TicksStarted, WorldUpdate, WritableGUIWorkspace }
+import org.nlogo.internalapi.{ JobScheduler, ModelUpdate, SchedulerWorkspace,
+  TicksCleared, TicksStarted, WorldUpdate, WritableGUIWorkspace }
 
 import java.lang.{ Double => JDouble }
 

@@ -65,3 +65,24 @@ class TicksStartedMonitorable extends Monitorable[Boolean] with StaticMonitorabl
     updateCallback(b)
   }
 }
+
+class JobRunningMonitorable extends Monitorable[Boolean] {
+  def defaultValue = false
+  var currentValue = defaultValue
+
+  var updateCallback: (Boolean => Unit) = { (a: Boolean) => }
+  var errorCallback: (Exception => Unit) = { (e: Exception) => }
+
+  def onUpdate(callback: Boolean => Unit): Unit = {
+    updateCallback = callback
+  }
+
+  def onError(callback: Exception => Unit): Unit = {
+    errorCallback = callback
+  }
+
+  def set(b: Boolean): Unit = {
+    currentValue = b
+    updateCallback(b)
+  }
+}

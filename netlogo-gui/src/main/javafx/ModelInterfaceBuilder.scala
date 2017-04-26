@@ -15,7 +15,7 @@ import org.nlogo.core.{
 import org.nlogo.internalapi.{ AddProcedureRun,
   CompiledButton => ApiCompiledButton, CompiledModel,
   CompiledMonitor => ApiCompiledMonitor,
-  CompiledSlider => ApiCompiledSlider, RunComponent }
+  CompiledSlider => ApiCompiledSlider }
 
 object ModelInterfaceBuilder {
   def build(compiledModel: CompiledModel): (InterfaceArea) = {
@@ -36,7 +36,7 @@ object ModelInterfaceBuilder {
           monitor.relocate(m.left, m.top)
           interfacePane.getChildren.add(monitor)
         case compiledSlider: ApiCompiledSlider =>
-          val slider = new SliderControl(compiledSlider, compiledModel.runnableModel)
+          val slider = new SliderControl(compiledSlider)
           val s = compiledSlider.widget
           slider.relocate(s.left, s.top)
           interfacePane.getChildren.add(slider)

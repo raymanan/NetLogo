@@ -8,16 +8,11 @@ import javafx.beans.property.{ DoubleProperty, ObjectProperty, SimpleBooleanProp
 import javafx.beans.value.{ ChangeListener, ObservableValue }
 import javafx.fxml.{ FXML, FXMLLoader }
 import javafx.scene.control.{ ButtonBase, ToggleButton }
-import javafx.scene.image.ImageView
-import javafx.scene.input.MouseEvent
-import javafx.scene.layout.{ Background, BackgroundFill, StackPane }
-import javafx.scene.paint.Color
+import javafx.scene.layout.StackPane
 import java.lang.{ Double => JDouble }
 
 import org.nlogo.core.{ Button => CoreButton }
-import org.nlogo.internalapi.{ AddProcedureRun, CompiledButton => ApiCompiledButton,
-  JobDone, JobErrored, JobHalted, ModelAction, ModelUpdate, RunComponent,
-  RunnableModel, StopProcedure }
+import org.nlogo.internalapi.{ CompiledButton => ApiCompiledButton }
 
 class ButtonControl(compiledButton: ApiCompiledButton, foreverInterval: DoubleProperty)
   extends StackPane {

@@ -16,15 +16,14 @@ import javafx.scene.input.TouchEvent
 
 import com.sun.javafx.scene.control.skin.SliderSkin
 
-import org.nlogo.internalapi.{ CompiledSlider => ApiCompiledSlider, Monitorable, RunComponent, RunnableModel }
+import org.nlogo.internalapi.{ CompiledSlider => ApiCompiledSlider, Monitorable }
 
 import org.nlogo.core.{ Slider => CoreSlider }
 import Utils.{ changeListener, handler }
 
 // TODO: This only allows for sliders with constant mins and maxes
-class SliderControl(compiledSlider: ApiCompiledSlider, runnableModel: RunnableModel)
-  extends GridPane
-  with RunComponent {
+class SliderControl(compiledSlider: ApiCompiledSlider)
+  extends GridPane {
 
   @FXML
   var slider: Slider = _
