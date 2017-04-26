@@ -107,10 +107,10 @@ object CompileAll {
           val displayName = m.display.orElse(m.source).getOrElse("")
 
           compileCode(source, displayName).fold({
-            case e: CompilerException => CompiledMonitor(m, Some(e), "", null, source)
+            case e: CompilerException => CompiledMonitor(m, Some(e), "", null, source, widgetActions)
             case other => throw other
           },
-          proc => CompiledMonitor(m, None, tag, proc, source))
+          proc => CompiledMonitor(m, None, tag, proc, source, widgetActions))
         } getOrElse NonCompiledWidget(widget)
       case s: CoreSlider =>
         def decorateSource(body: String, name: String): String = {

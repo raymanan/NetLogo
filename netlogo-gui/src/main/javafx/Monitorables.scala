@@ -67,3 +67,11 @@ case class CompiledMonitorable[A](
     }
   }
 }
+
+case class NonCompiledMonitorable[A](val defaultValue: A) extends Monitorable[A] {
+  val currentValue: A = defaultValue
+  def onUpdate(callback: A => Unit): Unit = {}
+  def onError(callback: Exception => Unit): Unit = {}
+  def compilerError = None
+  def procedureTag = ""
+}

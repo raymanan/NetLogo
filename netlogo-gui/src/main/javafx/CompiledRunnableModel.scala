@@ -40,13 +40,6 @@ class CompiledRunnableModel(
   def modelLoaded(): Unit = {
     // TODO: compiledWidgets still need to have modelLoaded called on them even after this class is simplified
     compiledWidgets.foreach(_.modelLoaded())
-
-    monitorRegistry.values.foreach {
-      case um: ReporterMonitorable =>
-        val job =
-          new SuspendableJob(workspace.world.observers, false, um.procedure, 0, null, workspace.world.mainRNG)
-        jobThread.registerMonitor(um.procedureTag, job)
-    }
   }
 
   def modelUnloaded(): Unit = {
@@ -78,14 +71,6 @@ class CompiledRunnableModel(
         taggedComponents -= update.tag
     }
   }
-}
-
-case class NonCompiledMonitorable[A](val defaultValue: A) extends Monitorable[A] {
-  val currentValue: A = defaultValue
-  def onUpdate(callback: A => Unit): Unit = {}
-  def onError(callback: Exception => Unit): Unit = {}
-  def compilerError = None
-  def procedureTag = ""
 }
 
 class JobRunningMonitorable extends Monitorable[Boolean] {

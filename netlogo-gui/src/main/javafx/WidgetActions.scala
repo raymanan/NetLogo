@@ -88,11 +88,11 @@ class WidgetActions(workspace: Workspace, scheduler: JobScheduler) {
     }
   }
 
-  def addMonitorable[A](c: CompiledMonitorable[A]): Unit = {
+  def addMonitorable(r: ReporterMonitorable): Unit = {
     val job =
       new SuspendableJob(
-        workspace.world.observers, false, c.procedure, 0, null, workspace.world.mainRNG)
-    monitorsByTag += (c.procedureTag -> c)
-    scheduler.registerMonitor(c.procedureTag, job)
+        workspace.world.observers, false, r.procedure, 0, null, workspace.world.mainRNG)
+    monitorsByTag += (r.procedureTag -> r)
+    scheduler.registerMonitor(r.procedureTag, job)
   }
 }

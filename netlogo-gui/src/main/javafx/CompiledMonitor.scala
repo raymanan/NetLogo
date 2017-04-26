@@ -13,7 +13,8 @@ case class CompiledMonitor(
   val compilerError:  Option[CompilerException],
   val procedureTag:   String,
   val procedure:      Procedure,
-  val compiledSource: String)
+  val compiledSource: String,
+  widgetActions:      WidgetActions)
   extends ApiCompiledMonitor
   with ReporterMonitorable {
     var updateCallback: (String => Unit) = { (s: String) => }
@@ -37,5 +38,9 @@ case class CompiledMonitor(
           updateCallback(s)
         case other     => updateCallback(other.toString)
       }
+    }
+
+    override def modelLoaded(): Unit = {
+      widgetActions.addMonitorable(this)
     }
 }
