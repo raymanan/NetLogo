@@ -5,7 +5,7 @@ package org.nlogo.javafx
 import
   org.nlogo.{ api, internalapi, nvm },
     internalapi.{ CompiledWidget, InterfaceControl, JobErrored, JobFinished, JobScheduler,
-      ModelUpdate, MonitorsUpdate },
+      ModelOperation, ModelUpdate, MonitorsUpdate, UpdateFailure, UpdateVariable, UpdateSuccess },
     nvm.{ SuspendableJob, Workspace }
 
 import
@@ -20,9 +20,10 @@ import
 // 2) Workspace already has enough cruft growing on it and anything which gets put into org.nlogo.workspace seems
 //    like it may eventually end up added to Workspace.
 class WidgetActions(workspace: Workspace, scheduler: JobScheduler) extends InterfaceControl {
-  var widgetsByJobTag = WeakHashMap.empty[String, CompiledWidget]
-  val monitorsByTag = WeakHashMap.empty[String, ReporterMonitorable]
-  var staticMonitorables = WeakHashMap.empty[String, Seq[StaticMonitorable]]
+  val widgetsByJobTag    = WeakHashMap.empty[String, CompiledWidget]
+  val monitorsByTag      = WeakHashMap.empty[String, ReporterMonitorable]
+  val staticMonitorables = WeakHashMap.empty[String, Seq[StaticMonitorable]]
+  val pendingUpdates     = WeakHashMap.empty[UpdateVariable, ReporterMonitorable]
 
   def run(button: CompiledButton, interval: Long): Unit = {
     if (button.taskTag.isEmpty) {
@@ -46,6 +47,15 @@ class WidgetActions(workspace: Workspace, scheduler: JobScheduler) extends Inter
     } else {
       throw new IllegalStateException("This job is not running")
     }
+  }
+
+  def runOperation(op: ModelOperation, m: ReporterMonitorable): Unit = {
+    val task = scheduler.createOperation(op)
+    op match {
+      case uv: UpdateVariable => pendingUpdates(uv) = m
+      case _ =>
+    }
+    scheduler.queueTask(task)
   }
 
   def notifyUpdate(update: ModelUpdate): Unit = {
@@ -74,6 +84,14 @@ class WidgetActions(workspace: Workspace, scheduler: JobScheduler) extends Inter
               monitor.update(result)
             }
         }
+      case UpdateSuccess(uv) =>
+        val monitorable = pendingUpdates(uv)
+        monitorable.update(uv.updateValue)
+        pendingUpdates -= uv
+      case UpdateFailure(uv, actual) =>
+        val monitorable = pendingUpdates(uv)
+        monitorable.update(actual)
+        pendingUpdates -= uv
       case other =>
         staticMonitorables.getOrElse(other.tag, Seq()).foreach { m =>
           m.notifyUpdate(other)

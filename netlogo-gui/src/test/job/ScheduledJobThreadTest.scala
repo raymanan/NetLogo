@@ -6,8 +6,10 @@ import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.{ Collections, ArrayList }
 
-import org.nlogo.internalapi.{ ModelAction, JobDone, JobErrored, JobHalted,
-  JobScheduler => ApiJobScheduler, ModelUpdate, MonitorsUpdate, SuspendableJob }
+import org.nlogo.core.AgentKind
+import org.nlogo.internalapi.{ JobDone, JobErrored, JobHalted,
+  JobScheduler => ApiJobScheduler, ModelUpdate, ModelOperation,
+  MonitorsUpdate, SuspendableJob, UpdateVariable, UpdateSuccess }
 import org.nlogo.nvm.HaltException
 
 import org.scalatest.{ FunSuite, Inside }
@@ -25,6 +27,13 @@ object ScheduledJobThreadTest {
     def die(): Unit = {}
     var setTime: Long = 0
     override def currentTime = setTime
+    var processedOperations = Seq.empty[ModelOperation]
+    def handleModelOperation = { (op) =>
+      processedOperations :+= op
+      op match {
+        case uv: UpdateVariable => Try(UpdateSuccess(uv))
+      }
+    }
   }
 }
 
@@ -46,7 +55,8 @@ class ScheduledJobThreadTest extends FunSuite {
   }
 
   test("job ordering puts scheduled operation ahead of stopping a job") {
-    assertSortedOrder(ScheduleOperation({() => }, "abc", 1), StopJob("a", 0))
+    assertSortedOrder(ScheduleOperation(UpdateVariable("FOO", AgentKind.Observer, 0, "", "abc"),
+      "abc", 1), StopJob("a", 0))
   }
 
   test("job ordering puts scheduled operation job ahead of adding a job") {
@@ -122,6 +132,11 @@ class ScheduledJobThreadTest extends FunSuite {
     val DummyKeepRunningJob = new DummyJob().keepRepeating()
     val DummyErrorJob = new DummyJob().onNextRun(() => throw new RuntimeException("error!"))
     val resultJob = new DummyJob().returning(Double.box(123))
+    def scheduleOperation(op: ModelOperation): String = {
+      val createdTask = subject.createOperation(op)
+      subject.queueTask(createdTask)
+      createdTask.tag
+    }
     def scheduleOperation(op: () => Unit): String = {
       val createdTask = subject.createOperation(op)
       subject.queueTask(createdTask)
@@ -167,7 +182,7 @@ class ScheduledJobThreadTest extends FunSuite {
 
   test("scheduling an operation schedules it for run") { new Helper {
     val jobTag = scheduleOperation({ () => })
-    inside(firstTask) { case ScheduleOperation(_, t, time) => assert(t == jobTag) }
+    inside(firstTask) { case ScheduleArbitraryAction(_, t, time) => assert(t == jobTag) }
   } }
 
   test("stopping a job schedules a job stop") { new Helper {
@@ -398,5 +413,12 @@ class ScheduledJobThreadTest extends FunSuite {
     haltingMonitor.haltOnNextRun(true)
     runTasks(2)
     assert(subject.queue.isEmpty)
+  } }
+
+  test("operations are run by model operations") { new Helper {
+    val update = new UpdateVariable("FOO", AgentKind.Observer, 0, Double.box(123), Double.box(456))
+    scheduleOperation(update)
+    runTasks(3)
+    assert(subject.processedOperations.contains(update))
   } }
 }

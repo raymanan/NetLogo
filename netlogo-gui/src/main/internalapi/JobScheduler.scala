@@ -23,6 +23,7 @@ trait JobScheduler {
 
   def createJob(job: SuspendableJob, interval: Long): Task
   def createJob(job: SuspendableJob): Task
+  def createOperation(op: ModelOperation): Task
   def createOperation(op: () => Unit): Task
   def stopJob(jobTag: String): Unit
   def registerMonitor(name: String, job: SuspendableJob): Unit

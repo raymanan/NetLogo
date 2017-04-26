@@ -116,23 +116,25 @@ object CompileAll {
           // I'm not sure that __done is needed here
           s"to-report $name [] __observercode report (\n$body\n) __done end"
         }
+        def makeCompiledMonitorable(monitorType: String, default: Double, source: String): CompiledMonitorable[Double] = {
+          val name = s"__slider-${s.hashCode}-${monitorType}"
+          val procSource = decorateSource(source, name)
+          compileCode(procSource, name).fold({
+            case e: CompilerException =>
+              CompiledMonitorable[Double](default, Some(e), "", null, procSource)
+            case other => throw other
+          },
+          proc => CompiledMonitorable[Double](default, None, name, proc, procSource))
+        }
         def monitorable(monitorType: String, default: Double, source: String): Monitorable[Double] =
           NumberParser.parse(source) match {
             case Right(jdouble) => NonCompiledMonitorable[Double](jdouble.doubleValue)
-            case Left(_) =>
-              val name = s"__slider-${s.hashCode}-${monitorType}"
-              val procSource = decorateSource(source, name)
-              compileCode(procSource, name).fold({
-                case e: CompilerException =>
-                  CompiledMonitorable[Double](0.0, Some(e), "", null, procSource)
-                case other => throw other
-              },
-              proc => CompiledMonitorable[Double](default, None, name, proc, procSource))
+            case Left(_) => makeCompiledMonitorable(monitorType, default, source)
           }
 
 
         // we have to make the reporter for the variable
-        val value = monitorable("value", s.default, s.variable.getOrElse(s.default.toString))
+        val value = makeCompiledMonitorable("value", s.default, s.variable.getOrElse(s.default.toString))
         // for the rest, we need to check whether they are numbers or not
         // If they are numbers, we're done and we make them into NonCompiledMonitorables
         val min = monitorable("min", 0.0,   s.min)

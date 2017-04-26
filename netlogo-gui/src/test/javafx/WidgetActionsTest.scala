@@ -9,7 +9,7 @@ import
 
 import
   org.nlogo.{ compile, core, internalapi, job, nvm },
-    core.{ Button, Femto },
+    core.{ Button, Femto, Slider },
     internalapi.{ ModelUpdate, TicksCleared, TicksStarted },
     nvm.{ Command, DummyWorkspace, Procedure },
     compile.{ api, NvmTests },
@@ -133,5 +133,27 @@ class WidgetActionsTest extends FunSuite {
     actions.addMonitorable(m)
     runTasks(5)
     assert(error != null)
+  } }
+
+  test("widget actions handles variable updates") { new Helper {
+    val ast = new StatementsBuilder {
+      report((new ReporterBuilder() { constInt(1) }).build)
+    }
+    val reporterProcedure = procedure(ast, true)
+    val m = new CompiledMonitorable[Double](
+      0.0, None, "monitor-procedure", reporterProcedure, "report 1")
+    val slider = new CompiledSlider(
+      Slider(Some("FOO")),
+      m,
+      NonCompiledMonitorable[Double](0.0),
+      NonCompiledMonitorable[Double](100.0),
+      NonCompiledMonitorable[Double](1.0),
+      actions)
+    slider.modelLoaded()
+    runTasks(3)
+    assert(slider.value.currentValue == 1.0)
+    slider.setValue(Double.box(3.0))
+    runTasks(2)
+    assert(slider.value.currentValue == 3.0)
   } }
 }

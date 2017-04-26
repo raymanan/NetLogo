@@ -7,7 +7,7 @@ import java.util.concurrent.{ BlockingQueue, PriorityBlockingQueue, TimeUnit }
 
 import org.nlogo.api.HaltSignal
 import org.nlogo.internalapi.{ JobScheduler => ApiJobScheduler, JobDone, JobErrored,
-  JobHalted, ModelUpdate, MonitorsUpdate, SuspendableJob, TaggedTask }
+  JobHalted, ModelOperation, ModelUpdate, MonitorsUpdate, SuspendableJob, TaggedTask }
 
 import scala.annotation.tailrec
 import scala.util.{ Failure, Success, Try }
@@ -22,7 +22,10 @@ object ScheduledJobThread {
     def stoppable: Boolean
   }
 
-  case class ScheduleOperation(op: () => Unit, tag: String, submissionTime: Long)           extends ScheduledTask {
+  case class ScheduleOperation(op: ModelOperation, tag: String, submissionTime: Long) extends ScheduledTask {
+    val stoppable = true
+  }
+  case class ScheduleArbitraryAction(op: () => Unit, tag: String, submissionTime: Long) extends ScheduledTask {
     val stoppable = true
   }
   // Q: Why not have AddJob and RunJob be the same?
@@ -66,6 +69,7 @@ object ScheduledJobThread {
     // lower means "first" or higher priority
     def basePriority(e: ScheduledTask): Int = {
       e match {
+        case ScheduleArbitraryAction(_, _, _) => 0
         case ScheduleOperation(_, _, _) => 0
         case StopJob(_, _)              => 1
         case AddJob(_, _, _, _)         => 2
@@ -97,6 +101,8 @@ trait JobScheduler extends ApiJobScheduler {
   def timeoutUnit: TimeUnit = TimeUnit.MILLISECONDS
 
   type Task = ScheduledTask
+
+  def handleModelOperation: ModelOperation => Try[ModelUpdate]
 
   // queue contains *inbound* information about tasks the jobs queue is expected
   // to perform. This variable is written to by any thread and read by the job
@@ -137,8 +143,11 @@ trait JobScheduler extends ApiJobScheduler {
   def createJob(job: SuspendableJob, interval: Long): ScheduledTask =
     AddJob(job, generateJobTag, interval, currentTime)
 
-  def createOperation(op: () => Unit): ScheduledTask =
+  def createOperation(op: ModelOperation): ScheduledTask =
     ScheduleOperation(op, generateJobTag, currentTime)
+
+  def createOperation(op: () => Unit): ScheduledTask =
+    ScheduleArbitraryAction(op, generateJobTag, currentTime)
 
   def queueTask(a: Task): Unit = { queue.add(a) }
 
@@ -166,7 +175,8 @@ trait JobScheduler extends ApiJobScheduler {
   def processTask(t: ScheduledTask): Unit = {
     t match {
       case RunJob(job, tag, interval, _) => runJob(job, tag, interval)
-      case ScheduleOperation(op, tag, _) => runOperation(op, tag)
+      case ScheduleArbitraryAction(op, tag, _) => runArbitraryAction(op, tag)
+      case ScheduleOperation(op, tag, _) => runOperation(op)
       case AddJob(job, tag, interval, _) =>
         job.scheduledBy(this)
         queue.add(RunJob(job, tag, interval, currentTime))
@@ -246,8 +256,13 @@ trait JobScheduler extends ApiJobScheduler {
         else                suspendedJobs += JobSuspension(interval, reRun)
     })
 
-  private def runOperation(op: () => Unit, tag: String): Unit =
+  private def runArbitraryAction(op: () => Unit, tag: String): Unit =
     runTask[Unit](op(), tag, { case Success(()) => jobCompleted(tag) })
+
+  private def runOperation(op: ModelOperation): Unit = {
+    monitorDataStale = true
+    handleModelOperation(op).foreach(updates.add _)
+  }
 
   private def addMonitor(tag: String, op: SuspendableJob): Unit = {
     if (monitorsRunning) pendingMonitors += tag -> op
@@ -285,7 +300,7 @@ trait JobScheduler extends ApiJobScheduler {
   }
 }
 
-class ScheduledJobThread(val updates: BlockingQueue[ModelUpdate])
+class ScheduledJobThread(val updates: BlockingQueue[ModelUpdate], val handleModelOperation: (ModelOperation => Try[ModelUpdate]))
   extends Thread(null, null, "ScheduledJobThread", JobThread.stackSize * 1024 * 1024)
   with JobScheduler {
 

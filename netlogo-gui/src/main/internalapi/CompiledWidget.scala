@@ -67,10 +67,9 @@ trait CompiledSlider extends CompiledWidget {
 
   /** Updates the value of the slider.
    *
-   * @param expected The value which the world is expected to contain at the time of update
    * @param update The value to which the slider ought to be updated
    */
-  def update(expected: AnyRef, update: AnyRef): Unit
+  def setValue(update: Double): Unit
 }
 
 case class NonCompiledWidget(val widget: Widget) extends CompiledWidget {

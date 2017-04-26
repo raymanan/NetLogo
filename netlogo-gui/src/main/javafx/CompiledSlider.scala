@@ -4,19 +4,26 @@ package org.nlogo.javafx
 
 import
   org.nlogo.{ core, internalapi },
-    core.{ Slider => CoreSlider },
-    internalapi.{ CompiledSlider => ApiCompiledSlider, Monitorable }
+    core.{ AgentKind, Slider => CoreSlider },
+    internalapi.{ CompiledSlider => ApiCompiledSlider, Monitorable, UpdateVariable }
 
 case class CompiledSlider(
   val widget: CoreSlider,
-  val value:  Monitorable[Double],
+  val value:  Monitorable[Double] with ReporterMonitorable,
   val min:    Monitorable[Double],
   val max:    Monitorable[Double],
   val inc:    Monitorable[Double],
   widgetActions: WidgetActions) extends ApiCompiledSlider {
 
-  def update(expected: AnyRef, update: AnyRef): Unit = {
-    // TODO: Fill this out
+  def setValue(update: Double): Unit = {
+    for {
+      name <- widget.variable
+    } {
+      widgetActions.runOperation(
+        UpdateVariable(name, AgentKind.Observer, 0,
+          Double.box(value.currentValue),
+          Double.box(update)), value)
+    }
   }
 
   override def modelLoaded(): Unit = {

@@ -27,6 +27,9 @@ case class UpdateSuccess(update: UpdateVariable) extends ModelUpdate {
 case class UpdateFailure(update: UpdateVariable, actualValue: AnyRef) extends ModelUpdate {
   def tag = "~world.variable.updated.failure"
 }
+case class UpdateError(update: UpdateVariable, error: AnyRef) extends ModelUpdate {
+  def tag = "~world.variable.updated.error"
+}
 case class MonitorsUpdate(values: Map[String, Try[AnyRef]], time: Long) extends ModelUpdate {
   def tag = "~monitors.update"
 }
