@@ -8,7 +8,7 @@ import
 import
   org.nlogo.{ compile, core, internalapi, job, nvm },
     core.{ Button, Femto },
-    internalapi.ModelUpdate,
+    internalapi.{ ModelUpdate, TicksCleared, TicksStarted },
     nvm.{ Command, DummyWorkspace, Procedure },
     compile.{ api, NvmTests },
       api.StatementsBuilder,
@@ -91,5 +91,27 @@ class WidgetActionsTest extends FunSuite {
 
   test("WidgetActions.stop(button) raises an exception if the button is not running") { new Helper {
     intercept[IllegalStateException] { button.stop() }
+  } }
+
+  test("TicksStarted messages update each CompiledButton to set ticks to enabled") { new Helper {
+    button.modelLoaded()
+    actions.notifyUpdate(TicksStarted)
+    assert(button.ticksEnabled.currentValue)
+  } }
+
+  test("TicksCleared messages update each CompiledButton to set ticksEnabled to false") { new Helper {
+    assert(! button.ticksEnabled.currentValue)
+    button.modelLoaded()
+    actions.notifyUpdate(TicksStarted)
+    actions.notifyUpdate(TicksCleared)
+    assert(! button.ticksEnabled.currentValue)
+  } }
+
+  test("WidgetActions.addMonitor registers a monitor with the job thread") { new Helper {
+    pending
+  } }
+
+  test("MonitorsUpdate messages update each of the monitors mentioned") { new Helper {
+    pending
   } }
 }

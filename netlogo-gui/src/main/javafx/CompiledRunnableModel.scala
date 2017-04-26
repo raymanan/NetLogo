@@ -38,6 +38,9 @@ class CompiledRunnableModel(
     }.toMap
 
   def modelLoaded(): Unit = {
+    // TODO: compiledWidgets still need to have modelLoaded called on them even after this class is simplified
+    compiledWidgets.foreach(_.modelLoaded())
+
     monitorRegistry.values.foreach {
       case um: ReporterMonitorable =>
         val job =
@@ -69,16 +72,6 @@ class CompiledRunnableModel(
             println(s"failure for monitor ${monitorRegistry(k)}: $v")
             v.printStackTrace()
             // println(monitorRegistry.get(k).map(_.procedure.dump))
-        }
-      case TicksStarted =>
-        compiledWidgets.foreach {
-          case c: CompiledButton => c.ticksEnabled.set(true)
-          case _ =>
-        }
-      case TicksCleared =>
-        compiledWidgets.foreach {
-          case c: CompiledButton => c.ticksEnabled.set(false)
-          case _ =>
         }
       case other =>
         taggedComponents.get(update.tag).foreach(_.updateReceived(update))
@@ -125,25 +118,6 @@ case class NonCompiledMonitorable[A](val defaultValue: A) extends Monitorable[A]
   def onError(callback: Exception => Unit): Unit = {}
   def compilerError = None
   def procedureTag = ""
-}
-
-class TicksStartedMonitorable extends Monitorable[Boolean] {
-  def defaultValue = false
-  var currentValue = defaultValue
-
-  var updateCallback: (Boolean => Unit) = { (a: Boolean) => }
-
-  def onUpdate(callback: Boolean => Unit): Unit = {
-    updateCallback = callback
-  }
-
-  /* this monitorable cannot error */
-  def onError(callback: Exception => Unit): Unit = {}
-
-  def set(b: Boolean): Unit = {
-    currentValue = b
-    updateCallback(b)
-  }
 }
 
 class JobRunningMonitorable extends Monitorable[Boolean] {

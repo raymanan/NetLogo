@@ -6,6 +6,8 @@ import org.nlogo.core.{ Button, CompilerException, Monitor, Slider, Widget }
 
 sealed trait CompiledWidget {
   def widget: Widget
+  def modelLoaded(): Unit = {}
+  def modelUnloaded(): Unit = {}
 }
 
 trait CompiledButton extends CompiledWidget {

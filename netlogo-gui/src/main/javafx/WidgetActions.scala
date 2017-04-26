@@ -20,6 +20,7 @@ import
 //    like it may eventually end up added to Workspace.
 class WidgetActions(workspace: Workspace, scheduler: JobScheduler) {
   var widgetsByJobTag = WeakHashMap.empty[String, CompiledWidget]
+  var monitorablesByTag = WeakHashMap.empty[String, Seq[StaticMonitorable]]
 
   def run(button: CompiledButton, interval: Long): Unit = {
     if (button.taskTag.isEmpty) {
@@ -65,7 +66,17 @@ class WidgetActions(workspace: Workspace, scheduler: JobScheduler) {
           case _ =>
         }
       case other =>
+        monitorablesByTag.getOrElse(other.tag, Seq()).foreach { m =>
+          m.notifyUpdate(other)
+        }
     }
     widgetsByJobTag -= update.tag
+  }
+
+  def addMonitorable(s: StaticMonitorable): Unit = {
+    s.tags.foreach { t =>
+      val existingMonitorables = monitorablesByTag.getOrElse(t, Seq())
+      monitorablesByTag(t) = s +: existingMonitorables
+    }
   }
 }
