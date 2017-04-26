@@ -8,8 +8,7 @@ import org.nlogo.internalapi.{
   EmptyRunnableModel, NonCompiledWidget }
 import org.nlogo.api.{ JobOwner, MersenneTwisterFast, NetLogoLegacyDialect }
 import org.nlogo.agent.World
-import org.nlogo.internalapi.{ AddProcedureRun, ModelAction, ModelUpdate, Monitorable,
-  MonitorsUpdate, SchedulerWorkspace, StopProcedure }
+import org.nlogo.internalapi.{ ModelUpdate, Monitorable, MonitorsUpdate, SchedulerWorkspace }
 import org.nlogo.core.{ AgentKind, Button => CoreButton, Chooser => CoreChooser,
   CompilerException, InputBox => CoreInputBox, Model, Monitor => CoreMonitor, NumericInput, NumberParser, Program,
   Slider => CoreSlider, StringInput, Switch => CoreSwitch, Widget }

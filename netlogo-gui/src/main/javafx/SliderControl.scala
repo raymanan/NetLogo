@@ -98,12 +98,4 @@ class SliderControl(compiledSlider: ApiCompiledSlider)
     })
     l.setText(s.getValue.toString.take(5) + model.units.map(" " + _).getOrElse(""))
   }
-
-  def tagAction(action: org.nlogo.internalapi.ModelAction,actionTag: String): Unit = {
-    actionTags = actionTags + actionTag
-  }
-
-  def updateReceived(update: org.nlogo.internalapi.ModelUpdate): Unit = {
-    actionTags = actionTags - update.tag
-  }
 }

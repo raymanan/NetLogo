@@ -6,9 +6,8 @@ import java.util.{ ArrayList => JArrayList, Comparator, UUID }
 import java.util.concurrent.{ BlockingQueue, PriorityBlockingQueue, TimeUnit }
 
 import org.nlogo.api.HaltSignal
-import org.nlogo.internalapi.{ AddProcedureRun, JobScheduler => ApiJobScheduler,
-  JobDone, JobErrored, JobHalted, ModelAction, ModelUpdate, MonitorsUpdate, StopProcedure,
-  SuspendableJob, TaggedTask }
+import org.nlogo.internalapi.{ JobScheduler => ApiJobScheduler, JobDone, JobErrored,
+  JobHalted, ModelUpdate, MonitorsUpdate, SuspendableJob, TaggedTask }
 
 import scala.annotation.tailrec
 import scala.util.{ Failure, Success, Try }

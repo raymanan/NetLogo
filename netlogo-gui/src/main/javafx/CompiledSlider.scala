@@ -22,7 +22,6 @@ case class CompiledSlider(
   override def modelLoaded(): Unit = {
     Seq(value, min, max, inc).foreach {
       case c: CompiledMonitorable[Double] => widgetActions.addMonitorable(c)
-
       case _ =>
     }
   }

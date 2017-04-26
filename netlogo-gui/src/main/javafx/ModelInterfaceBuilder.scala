@@ -12,7 +12,7 @@ import org.nlogo.core.{
   I18N, Model, Button => CoreButton, Chooser => CoreChooser, InputBox => CoreInputBox,
   Monitor => CoreMonitor, Output => CoreOutput, Plot => CorePlot, Slider => CoreSlider,
   TextBox => CoreTextBox, View => CoreView, Widget => CoreWidget }
-import org.nlogo.internalapi.{ AddProcedureRun,
+import org.nlogo.internalapi.{
   CompiledButton => ApiCompiledButton, CompiledModel,
   CompiledMonitor => ApiCompiledMonitor,
   CompiledSlider => ApiCompiledSlider }

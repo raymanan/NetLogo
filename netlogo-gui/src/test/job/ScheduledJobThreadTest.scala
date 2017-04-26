@@ -6,9 +6,8 @@ import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.{ Collections, ArrayList }
 
-import org.nlogo.internalapi.{ ModelAction, AddProcedureRun,
-  JobDone, JobErrored, JobHalted, JobScheduler => ApiJobScheduler, ModelUpdate, MonitorsUpdate,
-  StopProcedure, SuspendableJob }
+import org.nlogo.internalapi.{ ModelAction, JobDone, JobErrored, JobHalted,
+  JobScheduler => ApiJobScheduler, ModelUpdate, MonitorsUpdate, SuspendableJob }
 import org.nlogo.nvm.HaltException
 
 import org.scalatest.{ FunSuite, Inside }
