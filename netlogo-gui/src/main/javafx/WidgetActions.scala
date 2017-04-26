@@ -4,7 +4,7 @@ package org.nlogo.javafx
 
 import
   org.nlogo.{ api, internalapi, nvm },
-    internalapi.{ CompiledWidget, JobErrored, JobFinished, JobScheduler, ModelUpdate },
+    internalapi.{ CompiledWidget, JobErrored, JobFinished, JobScheduler, ModelUpdate, MonitorsUpdate },
     nvm.{ SuspendableJob, Workspace }
 
 import
@@ -20,7 +20,8 @@ import
 //    like it may eventually end up added to Workspace.
 class WidgetActions(workspace: Workspace, scheduler: JobScheduler) {
   var widgetsByJobTag = WeakHashMap.empty[String, CompiledWidget]
-  var monitorablesByTag = WeakHashMap.empty[String, Seq[StaticMonitorable]]
+  val monitorsByTag = WeakHashMap.empty[String, ReporterMonitorable]
+  var staticMonitorables = WeakHashMap.empty[String, Seq[StaticMonitorable]]
 
   def run(button: CompiledButton, interval: Long): Unit = {
     if (button.taskTag.isEmpty) {
@@ -65,8 +66,15 @@ class WidgetActions(workspace: Workspace, scheduler: JobScheduler) {
             stopButton(c)
           case _ =>
         }
+      case MonitorsUpdate(values, time) =>
+        values.foreach {
+          case (key, result) =>
+            monitorsByTag.get(key).foreach { monitor =>
+              monitor.update(result)
+            }
+        }
       case other =>
-        monitorablesByTag.getOrElse(other.tag, Seq()).foreach { m =>
+        staticMonitorables.getOrElse(other.tag, Seq()).foreach { m =>
           m.notifyUpdate(other)
         }
     }
@@ -75,8 +83,16 @@ class WidgetActions(workspace: Workspace, scheduler: JobScheduler) {
 
   def addMonitorable(s: StaticMonitorable): Unit = {
     s.tags.foreach { t =>
-      val existingMonitorables = monitorablesByTag.getOrElse(t, Seq())
-      monitorablesByTag(t) = s +: existingMonitorables
+      val existingMonitorables = staticMonitorables.getOrElse(t, Seq())
+      staticMonitorables(t) = s +: existingMonitorables
     }
+  }
+
+  def addMonitorable[A](c: CompiledMonitorable[A]): Unit = {
+    val job =
+      new SuspendableJob(
+        workspace.world.observers, false, c.procedure, 0, null, workspace.world.mainRNG)
+    monitorsByTag += (c.procedureTag -> c)
+    scheduler.registerMonitor(c.procedureTag, job)
   }
 }

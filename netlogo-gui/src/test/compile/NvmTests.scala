@@ -243,7 +243,7 @@ class NvmTests extends FunSuite {
       new ReporterBuilder() {
         withReporter(_corelessthan(), new _lessthan())
         withArg(getB)
-        withArg(constInt(3))
+        withArg(_.constInt(3))
       }
 
     val procedureBody = new StatementsBuilder() {
@@ -405,14 +405,8 @@ class NvmTests extends FunSuite {
         Seq(block.buildBlock, errorBlock.buildBlock))
     }
 
-    def report(value: Expression): StatementsBuilder = {
-      statementEtc("_report", "etc._report", Seq(value))
-    }
-
     def probe(cmd: Command): StatementsBuilder =
       statement(_probesyntax(), cmd)
-
-    def returnreport = statement(_coredone(), new _returnreport())
 
     def end  = statement(_corereturn(),  new _return())
   }

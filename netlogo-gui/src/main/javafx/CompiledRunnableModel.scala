@@ -80,38 +80,6 @@ class CompiledRunnableModel(
   }
 }
 
-case class CompiledMonitor(
-  val widget:         CoreMonitor,
-  val compilerError:  Option[CompilerException],
-  val procedureTag:   String,
-  val procedure:      Procedure,
-  val compiledSource: String)
-  extends ApiCompiledMonitor
-  with ReporterMonitorable {
-    var updateCallback: (String => Unit) = { (s: String) => }
-
-    def onUpdate(callback: String => Unit): Unit = {
-      updateCallback = callback
-    }
-
-    def onError(callback: Exception => Unit): Unit = {
-      // TODO: Fill this out
-    }
-
-    def defaultValue = "0"
-
-    var currentValue = defaultValue
-
-    def update(value: AnyRef): Unit = {
-      value match {
-        case s: String =>
-          currentValue = s
-          updateCallback(s)
-        case other     => updateCallback(other.toString)
-      }
-    }
-}
-
 case class NonCompiledMonitorable[A](val defaultValue: A) extends Monitorable[A] {
   val currentValue: A = defaultValue
   def onUpdate(callback: A => Unit): Unit = {}
@@ -138,37 +106,6 @@ class JobRunningMonitorable extends Monitorable[Boolean] {
   def set(b: Boolean): Unit = {
     currentValue = b
     updateCallback(b)
-  }
-}
-
-case class CompiledMonitorable[A](
-  val defaultValue: A,
-  val compilerError: Option[CompilerException],
-  val procedureTag: String,
-  val procedure: Procedure,
-  val compiledSource: String)(implicit ct: scala.reflect.ClassTag[A])
-  extends Monitorable[A]
-  with ReporterMonitorable {
-
-  var currentValue: A = defaultValue
-
-  var updateCallback: (A => Unit) = { (a: A) => }
-
-  def onUpdate(callback: A => Unit): Unit = {
-    updateCallback = callback
-  }
-
-  def onError(callback: Exception => Unit): Unit = {
-    // TODO: Fill this out
-  }
-
-  def update(value: AnyRef): Unit = {
-    value match {
-      case a: A  =>
-        currentValue = a
-        updateCallback(a)
-      case other =>
-    }
   }
 }
 

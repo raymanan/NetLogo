@@ -3,7 +3,9 @@
 package org.nlogo.javafx
 
 import
-  java.util.{ ArrayList => JArrayList }
+  java.{ lang, util },
+    lang.{ Double => JDouble },
+    util.{ ArrayList => JArrayList }
 
 import
   org.nlogo.{ compile, core, internalapi, job, nvm },
@@ -11,7 +13,7 @@ import
     internalapi.{ ModelUpdate, TicksCleared, TicksStarted },
     nvm.{ Command, DummyWorkspace, Procedure },
     compile.{ api, NvmTests },
-      api.StatementsBuilder,
+      api.{ ReporterBuilder, StatementsBuilder },
       NvmTests.assembleProcedure,
     job.ScheduledJobThreadTest.SimpleScheduler
 
@@ -24,9 +26,9 @@ import
 class WidgetActionsTest extends FunSuite {
   trait Helper {
     val ws = new DummyWorkspace()
-    def procedure(b: StatementsBuilder): Procedure = {
+    def procedure(b: StatementsBuilder, isReporter: Boolean = false): Procedure = {
       import org.nlogo.core.{ SourceLocation, Token, TokenType }
-      val p = new Procedure(false, "ABC", Token("ABC", TokenType.Ident, "ABC")(SourceLocation(0, 5, "")), Seq(), null)
+      val p = new Procedure(isReporter, "ABC", Token("ABC", TokenType.Ident, "ABC")(SourceLocation(0, 5, "")), Seq(), null)
       p.topLevel = true
       val stmts = new StatementsBuilder()
       assembleProcedure(p, b)
@@ -108,10 +110,28 @@ class WidgetActionsTest extends FunSuite {
   } }
 
   test("WidgetActions.addMonitor registers a monitor with the job thread") { new Helper {
-    pending
+    val ast = new StatementsBuilder {
+      report((new ReporterBuilder() { constInt(1) }).build)
+    }
+    val reporterProcedure = procedure(ast, true)
+    val m = new CompiledMonitorable[JDouble](
+      Double.box(0.0), None, "monitor-procedure", reporterProcedure, "report 1")
+    actions.addMonitorable(m)
+    runTasks(5)
+    assert(m.currentValue == Double.box(1.0))
   } }
 
-  test("MonitorsUpdate messages update each of the monitors mentioned") { new Helper {
-    pending
+  test("WidgetActions.addMonitor updates monitors on failure") { new Helper {
+    val ast = new StatementsBuilder {
+      statementEtc("etc._error", Seq(new ReporterBuilder() { constString("foo") }.build))
+      report(new ReporterBuilder() { constInt(1) }.build)
+    }
+    val reporterProcedure = procedure(ast, true)
+    val m = new CompiledMonitorable[JDouble](
+      Double.box(0.0), None, "monitor-procedure", reporterProcedure, "report 1")
+    m.onError({ e => error = e})
+    actions.addMonitorable(m)
+    runTasks(5)
+    assert(error != null)
   } }
 }
