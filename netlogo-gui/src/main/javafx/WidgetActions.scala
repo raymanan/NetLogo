@@ -85,13 +85,19 @@ class WidgetActions(workspace: Workspace, scheduler: JobScheduler) extends Inter
             }
         }
       case UpdateSuccess(uv) =>
-        val monitorable = pendingUpdates(uv)
-        monitorable.update(uv.updateValue)
-        pendingUpdates -= uv
+        for {
+          monitorable <- pendingUpdates.get(uv)
+        } {
+          monitorable.update(uv.updateValue)
+          pendingUpdates -= uv
+        }
       case UpdateFailure(uv, actual) =>
-        val monitorable = pendingUpdates(uv)
-        monitorable.update(actual)
-        pendingUpdates -= uv
+        for {
+          monitorable <- pendingUpdates.get(uv)
+        } {
+          monitorable.update(actual)
+          pendingUpdates -= uv
+        }
       case other =>
         staticMonitorables.getOrElse(other.tag, Seq()).foreach { m =>
           m.notifyUpdate(other)
