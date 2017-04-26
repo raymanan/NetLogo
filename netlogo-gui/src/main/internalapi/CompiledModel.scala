@@ -17,8 +17,6 @@ trait RunComponent {
 }
 
 trait RunnableModel {
-  def submitAction(action: ModelAction): Unit // when you don't care that the job completes
-  def submitAction(action: ModelAction, component: RunComponent): Unit
   def notifyUpdate(update: ModelUpdate): Unit
   def modelLoaded(): Unit
   def modelUnloaded(): Unit

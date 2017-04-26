@@ -51,7 +51,7 @@ object CompileAll {
 
       CompiledModel(model,
         compiledWidgets,
-        new CompiledRunnableModel(workspace, compiledWidgets),
+        new CompiledRunnableModel(workspace, compiledWidgets, widgetActions),
         Right(results.program))
     } catch {
       case e: CompilerException =>

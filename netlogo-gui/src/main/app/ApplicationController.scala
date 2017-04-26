@@ -100,7 +100,7 @@ class ApplicationController {
             }(executionContext).foreach {
               compiledModel =>
                 ApplicationController.this.compiledModel = compiledModel
-                val (interfaceWidgetsPane, widgetsMap) =
+                val interfaceWidgetsPane =
                   ModelInterfaceBuilder.build(compiledModel)
                 if (interfaceArea != null) {
                   interfaceTabArea.getChildren.remove(interfaceArea)

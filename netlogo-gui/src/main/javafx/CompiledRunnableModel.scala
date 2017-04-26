@@ -17,14 +17,17 @@ import org.nlogo.workspace.AbstractWorkspace
 
 import scala.util.{ Failure, Success }
 
-class CompiledRunnableModel(workspace: AbstractWorkspace with SchedulerWorkspace, compiledWidgets: Seq[CompiledWidget]) extends RunnableModel  {
+class CompiledRunnableModel(
+  workspace: AbstractWorkspace with SchedulerWorkspace,
+  compiledWidgets: Seq[CompiledWidget],
+  widgetActions: WidgetActions) extends RunnableModel  {
   val jobThread = workspace.scheduledJobThread
 
-  override def submitAction(action: ModelAction): Unit = {
+  def submitAction(action: ModelAction): Unit = {
     scheduleAction(action, None)
   }
 
-  override def submitAction(action: ModelAction, component: RunComponent): Unit = {
+  def submitAction(action: ModelAction, component: RunComponent): Unit = {
     scheduleAction(action, Some(component))
   }
 
@@ -86,6 +89,8 @@ class CompiledRunnableModel(workspace: AbstractWorkspace with SchedulerWorkspace
   }
 
   def notifyUpdate(update: ModelUpdate): Unit = {
+    // TODO: widgetActions needs to be notified of updates even after this class is simplified
+    widgetActions.notifyUpdate(update)
     update match {
       case MonitorsUpdate(values, time) =>
         values.foreach {

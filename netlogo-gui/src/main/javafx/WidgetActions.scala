@@ -62,7 +62,6 @@ class WidgetActions(workspace: Workspace, scheduler: JobScheduler) {
         widgetsByJobTag.get(tag) match {
           case Some(c: CompiledButton) =>
             stopButton(c)
-            c.isRunning.set(false)
           case _ =>
         }
       case other =>
