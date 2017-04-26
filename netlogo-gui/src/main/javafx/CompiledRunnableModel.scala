@@ -3,13 +3,13 @@
 package org.nlogo.javafx
 
 import org.nlogo.internalapi.{
-  CompiledModel, CompiledWidget, CompiledButton => ApiCompiledButton,
-  CompiledMonitor => ApiCompiledMonitor, CompiledSlider => ApiCompiledSlider,
-  EmptyRunnableModel, AddProcedureRun, ModelAction, ModelUpdate, Monitorable, MonitorsUpdate,
+  CompiledModel, CompiledWidget, CompiledMonitor => ApiCompiledMonitor,
+  CompiledSlider => ApiCompiledSlider, EmptyRunnableModel, AddProcedureRun,
+  ModelAction, ModelUpdate, Monitorable, MonitorsUpdate,
   NonCompiledWidget, RunnableModel, RunComponent,
   SchedulerWorkspace, StopProcedure, TicksCleared, TicksStarted }
 
-import org.nlogo.core.{ AgentKind, Button => CoreButton, Chooser => CoreChooser,
+import org.nlogo.core.{ AgentKind, Chooser => CoreChooser,
   CompilerException, InputBox => CoreInputBox, Model, Monitor => CoreMonitor, NumericInput, Program,
   Slider => CoreSlider, StringInput, Switch => CoreSwitch, Widget }
 import org.nlogo.nvm.{ CompilerResults, ConcurrentJob, ExclusiveJob, Procedure, SuspendableJob }
@@ -23,17 +23,9 @@ class CompiledRunnableModel(
   widgetActions: WidgetActions) extends RunnableModel  {
   val jobThread = workspace.scheduledJobThread
 
-  def submitAction(action: ModelAction): Unit = {
-    scheduleAction(action, None)
-  }
-
-  def submitAction(action: ModelAction, component: RunComponent): Unit = {
-    scheduleAction(action, Some(component))
-  }
-
   private var taggedComponents = Map.empty[String, RunComponent]
 
-  val monitorRegistry: Map[String, UpdateableMonitorable] =
+  val monitorRegistry: Map[String, ReporterMonitorable] =
     compiledWidgets.flatMap {
       case cm: CompiledMonitor => Seq(cm)
       case cs: CompiledSlider  =>
@@ -42,12 +34,12 @@ class CompiledRunnableModel(
         }
       case _ => Seq()
     }.map {
-      case um: UpdateableMonitorable => um.procedureTag -> um
+      case um: ReporterMonitorable => um.procedureTag -> um
     }.toMap
 
   def modelLoaded(): Unit = {
     monitorRegistry.values.foreach {
-      case um: UpdateableMonitorable =>
+      case um: ReporterMonitorable =>
         val job =
           new SuspendableJob(workspace.world.observers, false, um.procedure, 0, null, workspace.world.mainRNG)
         jobThread.registerMonitor(um.procedureTag, job)
@@ -63,29 +55,6 @@ class CompiledRunnableModel(
       taggedComponents = taggedComponents + (tag -> component)
       component.tagAction(action, tag)
     }
-  }
-
-  private def scheduleAction(action: ModelAction, componentOpt: Option[RunComponent]): Unit = {
-    action match {
-      case AddProcedureRun(widgetTag, isForever, interval) =>
-        // TODO: this doesn't take isForever into account yet
-        val p = findWidgetProcedure(widgetTag)
-        findWidgetProcedure(widgetTag).foreach { procedure =>
-          val job =
-            new SuspendableJob(workspace.world.observers, isForever, procedure, 0, null, workspace.world.mainRNG)
-          val scheduledAction = jobThread.createJob(job, interval)
-          registerTag(componentOpt, action, scheduledAction.tag)
-          jobThread.queueTask(scheduledAction)
-        }
-      case StopProcedure(jobTag) => jobThread.stopJob(jobTag)
-      case _ =>
-    }
-  }
-
-  def findWidgetProcedure(tag: String): Option[Procedure] = {
-    compiledWidgets.collect {
-      case c@CompiledButton(_, _, t, procedure, _) if t == tag && procedure != null => procedure
-    }.headOption
   }
 
   def notifyUpdate(update: ModelUpdate): Unit = {
@@ -118,32 +87,6 @@ class CompiledRunnableModel(
   }
 }
 
-case class CompiledButton(
-  val widget:        CoreButton,
-  val compilerError: Option[CompilerException],
-  val procedureTag:  String,
-  val procedure:     Procedure,
-  widgetActions:     WidgetActions)
-  extends ApiCompiledButton {
-    var taskTag: Option[String] = None
-    val isRunning    = new JobRunningMonitorable
-    val ticksEnabled = new TicksStartedMonitorable
-    def start(interval: Long = 0): Unit = {
-      widgetActions.run(this, interval)
-    }
-    def stop(): Unit = {
-      widgetActions.stop(this)
-    }
-    def errored(e: Exception): Unit = isRunning.errorCallback(e)
-  }
-
-trait UpdateableMonitorable {
-  def procedureTag: String
-  def update(a: AnyRef): Unit
-  def procedure: Procedure
-}
-
-
 case class CompiledMonitor(
   val widget:         CoreMonitor,
   val compilerError:  Option[CompilerException],
@@ -151,7 +94,7 @@ case class CompiledMonitor(
   val procedure:      Procedure,
   val compiledSource: String)
   extends ApiCompiledMonitor
-  with UpdateableMonitorable {
+  with ReporterMonitorable {
     var updateCallback: (String => Unit) = { (s: String) => }
 
     def onUpdate(callback: String => Unit): Unit = {
@@ -231,7 +174,7 @@ case class CompiledMonitorable[A](
   val procedure: Procedure,
   val compiledSource: String)(implicit ct: scala.reflect.ClassTag[A])
   extends Monitorable[A]
-  with UpdateableMonitorable {
+  with ReporterMonitorable {
 
   var currentValue: A = defaultValue
 
