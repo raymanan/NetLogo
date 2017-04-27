@@ -42,41 +42,17 @@ class HeadlessSingleThreadWorkspace(
   val renderer: RendererInterface,
   hubNetManagerFactory: HubNetManagerFactory)
   extends AbstractWorkspaceScala(_world, hubNetManagerFactory)
-  with Controllable
-  with WorldLoaderInterface {
+  with HeadlessWorkspaceBase {
   /*
   with ViewSettings {
     */
 
-    val compilerTestingMode: Boolean = false
     val dialect = if (Version.is3D) NetLogoThreeDDialect else NetLogoLegacyDialect
-
-    var modelOpened = false
-    var silent = false
 
     // this is a blatant hack that makes it possible to test the new stack trace stuff.
     // lastErrorReport gives more information than the regular exception that gets
     // thrown from the command function.  -JC 11/16/10
     var lastErrorReport: ErrorReport = null
-
-    /**
-     * Internal use only.
-     */
-    def initForTesting(worldSize: Int) {
-      initForTesting(worldSize, "")
-    }
-
-    /**
-     * Internal use only.
-     */
-    def initForTesting(worldSize: Int, modelString: String) {
-      if (Version.is3D)
-        initForTesting(new WorldDimensions3D(
-          -worldSize, worldSize, -worldSize, worldSize, -worldSize, worldSize),
-        modelString)
-      else
-        initForTesting(-worldSize, worldSize, -worldSize, worldSize, modelString)
-    }
 
     private lazy val loader = {
       val allAutoConvertables = fileformat.defaultAutoConvertables :+ Femto.scalaSingleton[AutoConvertable]("org.nlogo.sdm.SDMAutoConvertable")
@@ -84,13 +60,6 @@ class HeadlessSingleThreadWorkspace(
       fileformat.standardLoader(compiler.utilities)
         .addSerializer[Array[String], NLogoFormat](
           Femto.get[ComponentSerialization[Array[String], NLogoFormat]]("org.nlogo.sdm.NLogoSDMFormat"))
-    }
-
-    /**
-     * Internal use only.
-     */
-    def initForTesting(minPxcor: Int, maxPxcor: Int, minPycor: Int, maxPycor: Int, source: String) {
-      initForTesting(new WorldDimensions(minPxcor, maxPxcor, minPycor, maxPycor), source)
     }
 
     /**
@@ -246,7 +215,6 @@ class HeadlessSingleThreadWorkspace(
       }
     }
 
-    def patchSize: Double = ???
     def waitFor(runnable: org.nlogo.api.CommandRunnable): Unit = ???
     def waitForQueuedEvents(): Unit = ???
     def waitForResult[T](runnable: org.nlogo.api.ReporterRunnable[T]): T = ???
@@ -258,8 +226,6 @@ class HeadlessSingleThreadWorkspace(
     def stopInspectingDeadAgents(): Unit = ???
 
     // Members declared in org.nlogo.api.WorldResizer
-    def patchSize(patchSize: Double): Unit = ???
-    def resizeView(): Unit = ???
     def setDimensions(dim: org.nlogo.core.WorldDimensions,patchSize: Double): Unit = {
       world.patchSize(patchSize)
       if (! compilerTestingMode) {
@@ -272,28 +238,4 @@ class HeadlessSingleThreadWorkspace(
       world.createPatches(dim)
       clearDrawing()
     }
-
-
-    // Members declared in org.nlogo.workspace.WorldLoaderInterface
-    def calculateHeight(worldHeight: Int,patchSize: Double): Int =
-      (worldHeight * patchSize).toInt
-    def calculateWidth(worldWidth: Int,patchSize: Double): Int =
-      (worldWidth * patchSize).toInt
-    def clearTurtles(): Unit = {
-      if (! compilerTestingMode)
-        world.clearTurtles()
-    }
-    def computePatchSize(width: Int,numPatches: Int): Double = ???
-    private var _frameRate = 0.0
-    def frameRate(rate: Double): Unit = { _frameRate = rate }
-    def frameRate: Double = _frameRate
-    def getMinimumWidth: Int = 0
-    def insetWidth: Int = 0
-    def setSize(x: Int,y: Int): Unit = { }
-    private var _showTickCounter = false
-    def showTickCounter: Boolean = _showTickCounter
-    def showTickCounter(visible: Boolean): Unit = { _showTickCounter = visible }
-    private var _tickCounterLabel = "ticks"
-    def tickCounterLabel: String = _tickCounterLabel
-    def tickCounterLabel(label: String): Unit = { _tickCounterLabel = label }
 }
