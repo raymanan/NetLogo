@@ -3,15 +3,18 @@
 package org.nlogo.headless
 
 import org.nlogo.agent.{ World, World2D, World3D }
-import org.nlogo.api.{ RendererInterface, LogoException, NetLogoLegacyDialect, NetLogoThreeDDialect,
+import org.nlogo.api.{ AutoConvertable, ComponentSerialization, RendererInterface,
+  LogoException, ModelType, NetLogoLegacyDialect, NetLogoThreeDDialect,
   PreviewCommands, Version, ViewSettings, WorldDimensions3D }
-import org.nlogo.core.{ Program, WorldDimensions }
+import org.nlogo.core.{ Femto, Program, WorldDimensions }
 import org.nlogo.nvm.PresentationCompilerInterface
 import org.nlogo.shape.{ LinkShape, ShapeConverter, VectorShape }
+import org.nlogo.fileformat, fileformat.NLogoFormat
 import org.nlogo.workspace.{ AbstractWorkspace, AbstractWorkspaceScala,
   Controllable, HubNetManagerFactory, WorldLoaderInterface }
-
 import org.nlogo.util.Pico
+
+import java.nio.file.Paths
 
 object HeadlessSingleThreadWorkspace {
   def newInstance: HeadlessSingleThreadWorkspace =
@@ -75,6 +78,14 @@ class HeadlessSingleThreadWorkspace(
         initForTesting(-worldSize, worldSize, -worldSize, worldSize, modelString)
     }
 
+    private lazy val loader = {
+      val allAutoConvertables = fileformat.defaultAutoConvertables :+ Femto.scalaSingleton[AutoConvertable]("org.nlogo.sdm.SDMAutoConvertable")
+      val converter = fileformat.converter(getExtensionManager, getCompilationEnvironment, this, allAutoConvertables) _
+      fileformat.standardLoader(compiler.utilities)
+        .addSerializer[Array[String], NLogoFormat](
+          Femto.get[ComponentSerialization[Array[String], NLogoFormat]]("org.nlogo.sdm.NLogoSDMFormat"))
+    }
+
     /**
      * Internal use only.
      */
@@ -131,6 +142,8 @@ class HeadlessSingleThreadWorkspace(
           true
       }}
 
+    override val evaluator = new SingleThreadEvaluator(this)
+
     def magicOpen(x$1: String): Unit = ???
     def openString(x$1: String): Unit = ???
     def requestDisplayUpdate(x$1: Boolean): Unit = ???
@@ -140,7 +153,14 @@ class HeadlessSingleThreadWorkspace(
     def isHeadless: Boolean = true
 
     // Members declared in org.nlogo.workspace.Controllable
-    def open(path: String): Unit = ???
+    def open(path: String): Unit = {
+      val m = loader.readModel(Paths.get(path).toUri).get
+      setModelPath(path)
+      setModelType(ModelType.Normal)
+      fileManager.handleModelChange()
+      openModel(m)
+    }
+
     // Members declared in org.nlogo.workspace.Exporting
     def exportDrawingToCSV(writer: java.io.PrintWriter): Unit = ???
     def exportOutputAreaToCSV(writer: java.io.PrintWriter): Unit = ???
@@ -166,7 +186,10 @@ class HeadlessSingleThreadWorkspace(
     def zipLogFiles(filename: String): Unit = ???
 
     // Members declared in org.nlogo.api.Workspace
-    def changeTopology(wrapX: Boolean,wrapY: Boolean): Unit = ???
+    def changeTopology(wrapX: Boolean,wrapY: Boolean): Unit = {
+      world.changeTopology(wrapX, wrapY)
+      renderer.changeTopology(wrapX, wrapY)
+    }
     def clearOutput(): Unit = ???
     def exportDrawing(path: String,format: String): Unit = ???
     def exportInterface(path: String): Unit = ???
@@ -212,6 +235,7 @@ class HeadlessSingleThreadWorkspace(
         // load hubnet
 
         init()
+        _world.program(compilerResults.program)
 
         // compiler testing mode
         world.realloc()
@@ -221,6 +245,7 @@ class HeadlessSingleThreadWorkspace(
         }
       }
     }
+
     def patchSize: Double = ???
     def waitFor(runnable: org.nlogo.api.CommandRunnable): Unit = ???
     def waitForQueuedEvents(): Unit = ???
@@ -235,21 +260,40 @@ class HeadlessSingleThreadWorkspace(
     // Members declared in org.nlogo.api.WorldResizer
     def patchSize(patchSize: Double): Unit = ???
     def resizeView(): Unit = ???
-    def setDimensions(dim: org.nlogo.core.WorldDimensions,patchSize: Double): Unit = ???
-    def setDimensions(dim: org.nlogo.core.WorldDimensions): Unit = ???
+    def setDimensions(dim: org.nlogo.core.WorldDimensions,patchSize: Double): Unit = {
+      world.patchSize(patchSize)
+      if (! compilerTestingMode) {
+        world.createPatches(dim)
+      }
+      renderer.resetCache(patchSize)
+      clearDrawing()
+    }
+    def setDimensions(dim: org.nlogo.core.WorldDimensions): Unit = {
+      world.createPatches(dim)
+      clearDrawing()
+    }
+
 
     // Members declared in org.nlogo.workspace.WorldLoaderInterface
-    def calculateHeight(worldHeight: Int,patchSize: Double): Int = ???
-    def calculateWidth(worldWidth: Int,patchSize: Double): Int = ???
-    def clearTurtles(): Unit = ???
+    def calculateHeight(worldHeight: Int,patchSize: Double): Int =
+      (worldHeight * patchSize).toInt
+    def calculateWidth(worldWidth: Int,patchSize: Double): Int =
+      (worldWidth * patchSize).toInt
+    def clearTurtles(): Unit = {
+      if (! compilerTestingMode)
+        world.clearTurtles()
+    }
     def computePatchSize(width: Int,numPatches: Int): Double = ???
-    def frameRate(rate: Double): Unit = ???
-    def frameRate: Double = ???
-    def getMinimumWidth: Int = ???
-    def insetWidth(): Int = ???
-    def setSize(x: Int,y: Int): Unit = ???
-    def showTickCounter: Boolean = ???
-    def showTickCounter(visible: Boolean): Unit = ???
-    def tickCounterLabel: String = ???
-    def tickCounterLabel(label: String): Unit = ???
+    private var _frameRate = 0.0
+    def frameRate(rate: Double): Unit = { _frameRate = rate }
+    def frameRate: Double = _frameRate
+    def getMinimumWidth: Int = 0
+    def insetWidth: Int = 0
+    def setSize(x: Int,y: Int): Unit = { }
+    private var _showTickCounter = false
+    def showTickCounter: Boolean = _showTickCounter
+    def showTickCounter(visible: Boolean): Unit = { _showTickCounter = visible }
+    private var _tickCounterLabel = "ticks"
+    def tickCounterLabel: String = _tickCounterLabel
+    def tickCounterLabel(label: String): Unit = { _tickCounterLabel = label }
 }
