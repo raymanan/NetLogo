@@ -8,13 +8,16 @@ import org.nlogo.agent.{Agent, AgentSet, Observer, Turtle, Patch, Link}
 import org.nlogo.api.{ JobOwner, LogoException, ReporterLogoThunk, CommandLogoThunk}
 import org.nlogo.core.{ AgentKind, CompilerException }
 import org.nlogo.nvm.{ExclusiveJob, Activation, Context, Procedure, SuspendableJob}
-import org.nlogo.workspace.{ AbstractWorkspace, Evaluator, JobManagement }
+import org.nlogo.workspace.{ AbstractWorkspace, AbstractEvaluator, JobManagement }
 
 import scala.collection.immutable.Vector
 import scala.util.Try
 
-class SingleThreadEvaluator(workspace: AbstractWorkspace with JobManagement)
-  extends Evaluator(workspace) {
+class SingleThreadEvaluator(workspace: AbstractWorkspace)
+  extends AbstractEvaluator(workspace) {
+  def defaultAgentSet: AgentSet = workspace.world.observers
+  def defaultWaitForCompletion: Boolean = true
+
   @throws(classOf[CompilerException])
   override def evaluateCommands(owner: JobOwner,
                        source: String,
@@ -38,32 +41,20 @@ class SingleThreadEvaluator(workspace: AbstractWorkspace with JobManagement)
     invokeCompiler(source, None, true, agentClass)
 
   @throws(classOf[CompilerException])
-  override def compileReporter(source: String) =
+  def compileReporter(source: String) =
     invokeCompiler(source, None, false, AgentKind.Observer)
 
   /**
    * @return whether the code did a "stop" at the top level
    */
-  override def runCompiledCommands(owner: JobOwner, procedure: Procedure) = {
+  def runCompiledCommands(owner: JobOwner, procedure: Procedure) = {
     val suspendableJob = new SuspendableJob(workspace.world.observers, procedure, 0, null, workspace.mainRNG)
     suspendableJob.runFor(100000)
     suspendableJob.stopping
   }
 
-  override def runCompiledReporter(owner: JobOwner, procedure: Procedure) = {
+  def runCompiledReporter(owner: JobOwner, procedure: Procedure) = {
     val suspendableJob = new SuspendableJob(workspace.world.observers, procedure, 0, null, workspace.mainRNG)
     suspendableJob.runResult
-  }
-
-  ///
-
-  @throws(classOf[CompilerException])
-  private def invokeCompiler(source: String, displayName: Option[String], commands: Boolean, agentClass: AgentKind) = {
-    val wrappedSource = Evaluator.getHeader(agentClass, commands) + source + Evaluator.getFooter(commands)
-    val results =
-      workspace.compiler.compileMoreCode(wrappedSource, displayName, workspace.world.program,
-        workspace.procedures, workspace.getExtensionManager, workspace.getCompilationEnvironment)
-    results.head.init(workspace)
-    results.head
   }
 }
